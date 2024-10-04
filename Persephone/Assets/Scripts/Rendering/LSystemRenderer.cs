@@ -12,9 +12,6 @@ namespace ProceduralGraphics.LSystems.Rendering
         private GameObject lineRendererPrefab;
 
         [SerializeField]
-        private GameObject pruningNodePrefab;
-
-        [SerializeField]
         private Transform lineRenderParent;
 
         private List<GameObject> lineRenderers = new List<GameObject>();  // Tracks line renderers
@@ -54,7 +51,7 @@ namespace ProceduralGraphics.LSystems.Rendering
 
         public override void Render(string lSystemString, float length, float angle)
         {
-            if (lineRendererPrefab == null || pruningNodePrefab == null || lineRenderParent == null)
+            if (lineRendererPrefab == null || lineRenderParent == null)
             {
                 Debug.LogError("LSystemRenderer: Prefab or Parent not assigned.");
                 return;
@@ -67,19 +64,20 @@ namespace ProceduralGraphics.LSystems.Rendering
         {
             ClearAllObjects();  // Clear previous objects before rendering
 
-            Stack<TransformState> stack = new Stack<TransformState>();
+            Stack<BranchState> stack = new Stack<BranchState>();
             Vector3 currentPosition = Vector3.zero;
             Quaternion currentRotation = Quaternion.identity;
 
+            Branch mainParentBranch = null;
             GameObject currentParent = lineRenderParent.gameObject;
-            GameObject currentLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
-            LineRenderer currentLineRenderer = currentLineRendererObject.GetComponent<LineRenderer>();
-            lineRenderers.Add(currentLineRendererObject);
+            GameObject currentLineRendererObject = null;
+            LineRenderer currentLineRenderer = null;
 
             List<Vector3> positions = new List<Vector3> { currentPosition };
 
-            bool branchingHappened = false;
-            int counter = 0;
+            Branch currentBranch = null;
+            List<Branch> branches = new List<Branch>();
+
             foreach (char command in lSystemString)
             {
                 switch (command)
@@ -89,24 +87,50 @@ namespace ProceduralGraphics.LSystems.Rendering
                         Vector3 nextPosition = currentPosition + currentRotation * direction * length;
                         positions.Add(nextPosition);
 
-                        if (positions.Count >= 2)
+                        if (positions.Count == 2)
                         {
-                            currentLineRenderer.positionCount = positions.Count;
-                            currentLineRenderer.SetPositions(positions.ToArray());
+                            // Create the line renderer object only if we have two valid positions
+                            currentLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
+                            currentLineRenderer = currentLineRendererObject.GetComponent<LineRenderer>();
 
-                            // Create a new line renderer for the next branch
-                            GameObject newLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
-                            LineRenderer newLineRenderer = newLineRendererObject.GetComponent<LineRenderer>();
-                            lineRenderers.Add(newLineRendererObject);
+                            // Set the positions for this LineRenderer
+                            currentLineRenderer.positionCount = 2;
+                            currentLineRenderer.SetPosition(0, positions[0]);
+                            currentLineRenderer.SetPosition(1, positions[1]);
+                            lineRenderers.Add(currentLineRendererObject);
 
-                            currentLineRendererObject = newLineRendererObject;
-                            currentLineRenderer = newLineRenderer;
-                            positions = new List<Vector3> { nextPosition };
+                            Debug.Log($"New LineRenderer created with positions: Start {positions[0]}, End {positions[1]}");
 
-                            currentParent = currentLineRendererObject;
+                            // Create a new branch and check if it should be a child of the previous branch
+                            Branch newBranch = new Branch(currentLineRendererObject, null);
+
+                            // Check if the start of this line matches the end of the previous branch
+                            if (currentBranch != null && currentBranch.LineRendererObject != null)
+                            {
+                                LineRenderer previousLineRenderer = currentBranch.LineRendererObject.GetComponent<LineRenderer>();
+                                if (previousLineRenderer != null && positions[0] == previousLineRenderer.GetPosition(1))
+                                {
+                                    // The branches are connected, so set the new branch as a child of the current branch
+                                    newBranch.SetParent(currentBranch);
+                                    Debug.Log($"New branch created and parented to: {currentBranch.LineRendererObject.name}");
+                                }
+                            }
+
+                            branches.Add(newBranch);
+
+                            // If this is the first valid branch, mark it as the main parent
+                            if (mainParentBranch == null)
+                            {
+                                mainParentBranch = newBranch;
+                                Debug.Log("Main parent branch set.");
+                            }
+
+                            // Reset positions and update current branch
+                            currentBranch = newBranch;
+                            currentPosition = nextPosition;
+                            positions.Clear();
+                            positions.Add(currentPosition);
                         }
-
-                        currentPosition = nextPosition;
                         break;
 
                     case '+':  // Turn right
@@ -117,19 +141,22 @@ namespace ProceduralGraphics.LSystems.Rendering
                         currentRotation *= Quaternion.Euler(is3D ? Random3DAngle(-angle) : new Vector3(0, 0, angle));
                         break;
 
-                    case '[':  // Save state
-                        stack.Push(new TransformState(currentPosition, currentRotation, currentParent));
-                        branchingHappened = true;  // Set this to true to signal a node should be placed here
+                    case '[':  // Save current state for branching
+                        stack.Push(new BranchState(currentPosition, currentRotation, currentBranch));
+                        Debug.Log("State saved for branching.");
                         break;
 
                     case ']':  // Restore state
                         if (stack.Count > 0)
                         {
-                            TransformState state = stack.Pop();
+                            BranchState state = stack.Pop();
                             currentPosition = state.position;
                             currentRotation = state.rotation;
-                            currentParent = state.parent;
+                            currentBranch = state.branch;
 
+                            Debug.Log($"State restored: Parent branch is {currentBranch?.LineRendererObject.name ?? "None"}");
+
+                            positions.Clear();
                             positions.Add(currentPosition);
                         }
                         break;
@@ -139,25 +166,15 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
                 }
 
-                counter++;
-                if (counter % 100 == 0)  // Batch updates for performance
-                {
-                    yield return null;  // Yield to prevent editor freezing
-                }
+                yield return null;  // Yield to prevent editor freezing
             }
 
-            // Set final positions for the last line renderer
-            if (positions.Count > 0)
-            {
-                currentLineRenderer.positionCount = positions.Count;
-                currentLineRenderer.SetPositions(positions.ToArray());
-            }
-
-            Debug.Log($"Rendered {lineRenderers.Count} line segments.");
+            Debug.Log($"Rendered {branches.Count} branches.");
 
             // Move the camera to focus on the plant
             FocusCameraOnPlant();
         }
+
 
         public void ClearAllObjects()
         {
@@ -170,17 +187,9 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
             lineRenderers.Clear();
 
-            foreach (var pruningNode in pruningNodes)
-            {
-                if (pruningNode != null)
-                {
-                    Destroy(pruningNode);
-                }
-            }
-            pruningNodes.Clear();
-
             Debug.Log("Cleared all line renderers and nodes.");
         }
+
 
         private void MarkForDestruction(Transform parent)
         {
@@ -191,16 +200,6 @@ namespace ProceduralGraphics.LSystems.Rendering
 
             Debug.Log($"Destroyed object: {parent.name}");
             Destroy(parent.gameObject);  // Destroy the parent object itself
-        }
-
-        private void RegeneratePlantFromNode(Vector3 startPosition)
-        {
-            Debug.Log($"Regenerating plant from position {startPosition}");
-
-            // Call the LSystemGenerator to regenerate the plant from the clicked node
-            FindObjectOfType<LSystemGenerator>().GenerateFromNode(startPosition);
-
-            Debug.Log($"Generating from new node at {startPosition}");
         }
 
         private void RegeneratePlant()
@@ -223,7 +222,11 @@ namespace ProceduralGraphics.LSystems.Rendering
                 return;
             }
 
-            mainCamera.transform.position = plantCenter - mainCamera.transform.forward * plantBounds.size.magnitude * 1.5f;
+            // Adjust camera position to fully frame the plant based on its bounds
+            float maxDimension = Mathf.Max(plantBounds.size.x, plantBounds.size.y, plantBounds.size.z);
+            float cameraDistance = maxDimension * 1.5f; // Adjust this factor for framing
+
+            mainCamera.transform.position = plantCenter - mainCamera.transform.forward * cameraDistance;
             mainCamera.transform.LookAt(plantCenter);
 
             Debug.Log($"Camera focused on plant at center: {plantCenter}, bounds size: {plantBounds.size}");
@@ -231,14 +234,25 @@ namespace ProceduralGraphics.LSystems.Rendering
 
         private Bounds CalculateBounds()
         {
-            Bounds bounds = new Bounds(lineRenderParent.position, Vector3.zero);
+            if (lineRenderers.Count == 0)
+            {
+                return new Bounds(lineRenderParent.position, Vector3.zero); // If no line renderers, return empty bounds
+            }
+
+            Bounds bounds = new Bounds(lineRenderers[0].transform.position, Vector3.zero);
 
             foreach (var lineRenderer in lineRenderers)
             {
                 if (lineRenderer != null)
                 {
-                    Bounds lineBounds = lineRenderer.GetComponent<LineRenderer>().bounds;
-                    bounds.Encapsulate(lineBounds);
+                    LineRenderer lr = lineRenderer.GetComponent<LineRenderer>();
+                    if (lr != null && lr.positionCount > 0)
+                    {
+                        for (int i = 0; i < lr.positionCount; i++)
+                        {
+                            bounds.Encapsulate(lr.GetPosition(i));
+                        }
+                    }
                 }
             }
 
@@ -255,25 +269,37 @@ namespace ProceduralGraphics.LSystems.Rendering
             return new Vector3(Random.Range(-angle, angle), Random.Range(-angle, angle), Random.Range(-angle, angle));
         }
 
-        public void TriggerGrowthFromNode(Vector3 position)
-        {
-            Debug.Log($"Regenerating from node at position {position}");
-            ClearAllObjects();
-            FindObjectOfType<LSystemGenerator>().GenerateFromNode(position);
-        }
-
-        private struct TransformState
+        private struct BranchState
         {
             public Vector3 position;
             public Quaternion rotation;
-            public GameObject parent;
+            public Branch branch;  // The branch that corresponds to this state
 
-            public TransformState(Vector3 pos, Quaternion rot, GameObject parentObj)
+            public BranchState(Vector3 pos, Quaternion rot, Branch currentBranch)
             {
                 position = pos;
                 rotation = rot;
-                parent = parentObj;
+                branch = currentBranch;
             }
         }
+
+
+
+
+        // Recursively loop through the branches starting from the root
+        public void TraverseBranches(GameObject parentBranch)
+        {
+            Debug.Log($"Traversing branch: {parentBranch.name}");
+
+            foreach (Transform child in parentBranch.transform)
+            {
+                if (child.TryGetComponent(out LineRenderer childLineRenderer))
+                {
+                    TraverseBranches(child.gameObject);  // Recursive call
+                }
+            }
+        }
+
+
     }
 }
