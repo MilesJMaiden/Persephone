@@ -4,6 +4,9 @@ using System;
 using ProceduralGraphics.LSystems.ScriptableObjects;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
+using System.Collections;
 
 namespace ProceduralGraphics.LSystems.UI
 {
@@ -56,7 +59,7 @@ namespace ProceduralGraphics.LSystems.UI
             generateButton.onClick.AddListener(OnGenerateButtonClicked);
             renderToggle.onValueChanged.AddListener(OnRenderToggleChanged);
             is3DToggle.onValueChanged.AddListener(OnIs3DToggleChanged);
-            useMeshToggle.onValueChanged.AddListener(HandleUseMeshToggleChanged); // Correctly name and assign the method
+            useMeshToggle.onValueChanged.AddListener(HandleUseMeshToggleChanged);
         }
 
         private void InitializeDropdown()
@@ -73,10 +76,31 @@ namespace ProceduralGraphics.LSystems.UI
 
         private void OnVariantDropdownChanged(int index)
         {
-            if (index >= 0 && index < lSystemConfigs.Length)
+            // Temporarily disable InputSystemUIInputModule to prevent processing destroyed object events
+            var inputModule = EventSystem.current.GetComponent<InputSystemUIInputModule>();
+            if (inputModule != null)
             {
+                inputModule.enabled = false;
+            }
+
+            if (variantDropdown != null && index >= 0 && index < lSystemConfigs.Length)
+            {
+                variantDropdown.Hide(); // Ensure the dropdown is hidden before continuing
                 UpdateUIWithConfig(lSystemConfigs[index]);
             }
+
+            // Re-enable the Input System UI Input Module after dropdown changes
+            if (inputModule != null)
+            {
+                StartCoroutine(ReenableInputModule(inputModule));
+            }
+        }
+
+        // Coroutine to safely re-enable the Input System after dropdown changes
+        private IEnumerator ReenableInputModule(InputSystemUIInputModule inputModule)
+        {
+            yield return new WaitForEndOfFrame();  // Wait until end of frame
+            inputModule.enabled = true;  // Re-enable the input system module
         }
 
         private void UpdateUIWithConfig(LSystemConfig config)
@@ -149,7 +173,6 @@ namespace ProceduralGraphics.LSystems.UI
                 Debug.LogError("LSystemUIController: Selected config index is out of range.");
             }
         }
-
 
         private void OnIs3DToggleChanged(bool is3D)
         {
