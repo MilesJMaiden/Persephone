@@ -1,4 +1,3 @@
-// Assets/Scripts/Generation/LSystemGenerationJob.cs
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -40,17 +39,17 @@ namespace ProceduralGraphics.LSystems.Generation
                     // Pruning condition
                     if (iter == PruneIteration && c == 'F')
                     {
-                        continue;
+                        continue; // Skip 'F' if it's the prune iteration
                     }
 
                     for (int j = 0; j < rules.Length; j++)
                     {
                         if (rules[j].Predecessor == c)
                         {
-                            string successorStr = rules[j].SuccessorFixed.ToString();
-                            foreach (char successorChar in successorStr)
+                            // Instead of using ToString(), append the characters directly
+                            for (int k = 0; k < rules[j].SuccessorFixed.Length; k++)
                             {
-                                nextString.Append((byte)successorChar); // Append each character as a byte
+                                nextString.Append(rules[j].SuccessorFixed[k]); // Append each character directly
                             }
                             ruleApplied = true;
                             break;
@@ -77,9 +76,5 @@ namespace ProceduralGraphics.LSystems.Generation
                 result.Add(finalChar);
             }
         }
-
-
-
-
     }
 }
