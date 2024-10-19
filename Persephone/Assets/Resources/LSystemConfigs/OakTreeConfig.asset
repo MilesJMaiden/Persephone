@@ -10,14 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
-  m_Name: BushConfig
+  m_Name: OakTreeConfig
   m_EditorClassIdentifier: 
-  Name: Bush
+  Name: Oak Tree (Quercus)
   Axiom: F
   Rules:
   - Predecessor: 70
-    Successor: FF[-F][+F]
-  Angle: 25
-  Length: 0.6
-  DefaultIterations: 4
-  PruneIteration: 3
+    Successor: FF[-F]F[+F]
+  - Predecessor: 88
+    Successor: F[-X][+X]
+  Angle: 30
+  Length: 1
+  DefaultIterations: 5
+  Rules3D:
+  - Predecessor: 70
+    Successor: FF[-F]F[+F]
+  - Predecessor: 88
+    Successor: F[-X][+X]

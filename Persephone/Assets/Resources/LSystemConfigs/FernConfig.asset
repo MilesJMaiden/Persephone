@@ -12,14 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
   m_Name: FernConfig
   m_EditorClassIdentifier: 
-  Name: Fern
+  Name: Fern (Polypodiopsida)
   Axiom: F
   Rules:
-  - Predecessor: 88
-    Successor: F-[[X]+X]+F[+FX]-X
   - Predecessor: 70
-    Successor: FF
-  Angle: 22.5
-  Length: 0.4
+    Successor: F[+F]F[-F]
+  - Predecessor: 88
+    Successor: F[-X][+X]
+  Angle: 25
+  Length: 0.5
   DefaultIterations: 5
-  PruneIteration: 4
+  Rules3D:
+  - Predecessor: 70
+    Successor: F[+F]F[-F]
+  - Predecessor: 88
+    Successor: F[-X][+X]

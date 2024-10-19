@@ -10,14 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
-  m_Name: IvyConfig
+  m_Name: BambooConfig
   m_EditorClassIdentifier: 
-  Name: Weeping Willow
+  Name: Bamboo (Bambusoideae)
   Axiom: F
   Rules:
   - Predecessor: 70
     Successor: F[+F]F[-F]F
-  Angle: 35
-  Length: 0.5
-  DefaultIterations: 7
-  PruneIteration: 3
+  - Predecessor: 88
+    Successor: FF[-X][+X]
+  Angle: 25
+  Length: 0.6
+  DefaultIterations: 5
+  Rules3D:
+  - Predecessor: 70
+    Successor: F[+F]F[-F]F
+  - Predecessor: 88
+    Successor: FF[-X][+X]

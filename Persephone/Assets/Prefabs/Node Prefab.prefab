@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 484986768633896284}
   m_Layer: 6
   m_Name: Node Prefab
-  m_TagString: Untagged
+  m_TagString: Node
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

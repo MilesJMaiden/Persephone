@@ -1,4 +1,3 @@
-// Assets/Scripts/ScriptableObjects/LSystemConfig.cs
 using System.Collections.Generic;
 using UnityEngine;
 using ProceduralGraphics.LSystems.Generation; // Ensure correct namespace
@@ -33,6 +32,11 @@ namespace ProceduralGraphics.LSystems.ScriptableObjects
         public float Angle;
 
         /// <summary>
+        /// The random angle offset (default is 0).
+        /// </summary>
+        public float RandomOffset;
+
+        /// <summary>
         /// The length of each branch segment in the L-System.
         /// </summary>
         public float Length;
@@ -43,8 +47,8 @@ namespace ProceduralGraphics.LSystems.ScriptableObjects
         public int DefaultIterations;
 
         /// <summary>
-        /// The iteration at which pruning occurs.
+        /// The list of production rules specifically for 3D variants of the plant.
         /// </summary>
-        public int PruneIteration;
+        public List<Rule> Rules3D;
     }
 }

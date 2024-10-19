@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using System.Collections;
+using ProceduralGraphics.LSystems.Rendering;
 
 namespace ProceduralGraphics.LSystems.UI
 {
@@ -26,6 +27,9 @@ namespace ProceduralGraphics.LSystems.UI
         private TMP_InputField angleInput;
 
         [SerializeField]
+        private TMP_InputField randomOffsetInput;
+
+        [SerializeField]
         private TMP_InputField lengthInput;
 
         [SerializeField]
@@ -33,6 +37,9 @@ namespace ProceduralGraphics.LSystems.UI
 
         [SerializeField]
         private Toggle renderToggle;
+
+        [SerializeField]
+        private Toggle allNodesToggle; // New toggle for activating/deactivating all nodes
 
         [Header("L-System Configurations")]
         [SerializeField]
@@ -55,11 +62,13 @@ namespace ProceduralGraphics.LSystems.UI
             InitializeDropdown();
             iterationSlider.onValueChanged.AddListener(OnIterationSliderChanged);
             angleInput.onEndEdit.AddListener(OnAngleInputChanged);
+            randomOffsetInput.onEndEdit.AddListener(OnRandomOffsetInputChanged);
             lengthInput.onEndEdit.AddListener(OnLengthInputChanged);
             generateButton.onClick.AddListener(OnGenerateButtonClicked);
             renderToggle.onValueChanged.AddListener(OnRenderToggleChanged);
             is3DToggle.onValueChanged.AddListener(OnIs3DToggleChanged);
             useMeshToggle.onValueChanged.AddListener(HandleUseMeshToggleChanged);
+            allNodesToggle.onValueChanged.AddListener(OnAllNodesToggleChanged); // Add listener for new toggle
         }
 
         private void InitializeDropdown()
@@ -72,6 +81,16 @@ namespace ProceduralGraphics.LSystems.UI
             }
             variantDropdown.AddOptions(options);
             variantDropdown.onValueChanged.AddListener(OnVariantDropdownChanged);
+        }
+
+        private void OnAllNodesToggleChanged(bool isOn)
+        {
+            // Directly call a method in the LSystemRenderer to manage node visibility
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
+            {
+                lSystemRenderer.SetAllNodesActive(isOn);
+            }
         }
 
         private void OnVariantDropdownChanged(int index)
@@ -128,6 +147,16 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
+        // Add this method to handle random offset input
+        private void OnRandomOffsetInputChanged(string value)
+        {
+            if (!float.TryParse(value, out float offset))
+            {
+                Debug.LogWarning("Invalid random offset input. Using default value of 0.");
+                randomOffsetInput.text = "0";
+            }
+        }
+
         private void OnLengthInputChanged(string value)
         {
             if (!float.TryParse(value, out float length))
@@ -160,19 +189,36 @@ namespace ProceduralGraphics.LSystems.UI
                     lengthInput.text = parsedLength.ToString(); // Set the default in the UI as well
                 }
 
+                // Parse random offset input
+                if (!float.TryParse(randomOffsetInput.text, out float randomOffset))
+                {
+                    Debug.LogWarning("Invalid random offset input. Using default value of 0.");
+                    randomOffset = 0f; // Default value
+                    randomOffsetInput.text = randomOffset.ToString(); // Set the default in the UI as well
+                }
+
                 // Set the parsed values to the config
                 config.DefaultIterations = Mathf.RoundToInt(iterationSlider.value);
                 config.Angle = parsedAngle;
                 config.Length = parsedLength;
+                config.RandomOffset = randomOffset; // Set the random offset
 
                 // Trigger the event to generate the plant
                 OnGenerateRequested?.Invoke(config);
+
+                // Update the render call to include random offset
+                var renderer = FindObjectOfType<LSystemRenderer>();
+                if (renderer != null)
+                {
+                    renderer.Render(config.Axiom, parsedLength, parsedAngle, randomOffset);
+                }
             }
             else
             {
                 Debug.LogError("LSystemUIController: Selected config index is out of range.");
             }
         }
+
 
         private void OnIs3DToggleChanged(bool is3D)
         {
@@ -206,6 +252,7 @@ namespace ProceduralGraphics.LSystems.UI
             renderToggle.onValueChanged.RemoveListener(OnRenderToggleChanged);
             is3DToggle.onValueChanged.RemoveListener(OnIs3DToggleChanged);
             useMeshToggle.onValueChanged.RemoveListener(HandleUseMeshToggleChanged);
+            allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged); // Remove listener for the new toggle
         }
     }
 }

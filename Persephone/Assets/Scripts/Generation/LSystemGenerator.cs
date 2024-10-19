@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ProceduralGraphics.LSystems.Rendering;
 using System.Text;
+using ProceduralGraphics.LSystems.Rendering;
 
 namespace ProceduralGraphics.LSystems.Generation
 {
@@ -12,6 +12,7 @@ namespace ProceduralGraphics.LSystems.Generation
         public int Iterations { get; set; }
         public float Angle { get; set; }
         public float Length { get; set; }
+        public float RandomOffset { get; set; } // Add this line to define the random offset
         private RendererBase renderer;
 
         public void GenerateLSystem()
@@ -32,7 +33,7 @@ namespace ProceduralGraphics.LSystems.Generation
 
             Debug.Log($"Generated L-System String: {currentString}");
 
-            renderer.Render(currentString, Length, Angle);
+            renderer.Render(currentString, Length, Angle, RandomOffset); // Pass the random offset
         }
 
         private string ApplyRules(string input)
@@ -57,6 +58,8 @@ namespace ProceduralGraphics.LSystems.Generation
                 }
             }
 
+            // Log the resulting string after applying rules
+            Debug.Log($"Applied rules: {nextString.ToString()}");
             return nextString.ToString();
         }
 
@@ -70,24 +73,35 @@ namespace ProceduralGraphics.LSystems.Generation
         {
             Debug.Log($"Generating new branches from node at position: {nodePosition}");
 
-            // Apply the L-System rules starting from the pruned node.
-            string currentString = Axiom;  // You may modify the axiom for node-specific rules if needed.
+            string currentString = Axiom;
+            if (string.IsNullOrEmpty(Axiom))
+            {
+                Debug.LogError("LSystemGenerator: Axiom is not set.");
+                return;
+            }
+
+            Debug.Log($"Initial Axiom: {currentString}");
+
+            if (Rules == null || Rules.Count == 0)
+            {
+                Debug.LogError("LSystemGenerator: No rules defined.");
+                return;
+            }
 
             for (int i = 0; i < Iterations; i++)
             {
-                currentString = ApplyRules(currentString);  // Apply L-System rules to generate the string.
+                currentString = ApplyRules(currentString);
             }
 
-            // Log the new generated L-System string for debugging.
             Debug.Log($"Generated L-System string from node: {currentString}");
 
-            // Get the reference to the LSystemRenderer and pass the string, length, and angle.
-            RendererBase renderer = FindObjectOfType<LSystemRenderer>();
+            LSystemRenderer renderer = FindObjectOfType<LSystemRenderer>();
 
             if (renderer != null)
             {
-                // Render the L-System from the new node position
-                renderer.Render(currentString, Length, Angle);
+                // Ensure you have a random offset value available
+                float randomOffset = 0; // Set this from your UI or wherever you manage it
+                renderer.Render(currentString, Length, Angle, randomOffset);
                 Debug.Log("New branches generated successfully.");
             }
             else

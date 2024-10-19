@@ -28,7 +28,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
         }
 
-        public override void Render(string lSystemString, float length, float angle)
+        public override void Render(string lSystemString, float length, float angle, float randomOffset)
         {
             Debug.Log("LSystemMeshRenderer: Render method called.");
 

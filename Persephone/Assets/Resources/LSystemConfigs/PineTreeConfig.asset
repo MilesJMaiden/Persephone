@@ -10,16 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
-  m_Name: TreeConfig
+  m_Name: PineTreeConfig
   m_EditorClassIdentifier: 
-  Name: Tree
+  Name: Pine Tree (Pinus)
   Axiom: F
   Rules:
-  - Predecessor: 88
-    Successor: F-[[X]+X]+F[+FX]-X
   - Predecessor: 70
-    Successor: FF
+    Successor: F[+F]F[-F]F
+  - Predecessor: 88
+    Successor: F[+X][-X]F
   Angle: 25
-  Length: 1
-  DefaultIterations: 5
-  PruneIteration: 3
+  Length: 0.7
+  DefaultIterations: 6
+  Rules3D:
+  - Predecessor: 70
+    Successor: F[+F]F[-F]F
+  - Predecessor: 88
+    Successor: F[+X][-X]F
