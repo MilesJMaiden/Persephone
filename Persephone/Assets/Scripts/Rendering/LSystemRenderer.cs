@@ -1,18 +1,21 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using ProceduralGraphics.LSystems.Generation;
 using ProceduralGraphics.LSystems.UI;
+using System.Collections;
 
 namespace ProceduralGraphics.LSystems.Rendering
 {
+    [RequireComponent(typeof(LineRenderer))]
     public class LSystemRenderer : RendererBase
     {
         [SerializeField]
-        private GameObject lineRendererPrefab;
+        private GameObject lineRendererPrefab;  // Prefab for the line renderer
 
         [SerializeField]
-        private Transform lineRenderParent;
+        private GameObject nodePrefab;  // Prefab for the node to be instantiated at branch ends
+
+        [SerializeField]
+        private Transform lineRenderParent; // Parent object for line renderers
 
         private List<GameObject> lineRenderers = new List<GameObject>();  // Tracks line renderers
         private List<GameObject> pruningNodes = new List<GameObject>();  // Tracks node prefabs
@@ -51,7 +54,7 @@ namespace ProceduralGraphics.LSystems.Rendering
 
         public override void Render(string lSystemString, float length, float angle)
         {
-            if (lineRendererPrefab == null || lineRenderParent == null)
+            if (lineRendererPrefab == null || nodePrefab == null || lineRenderParent == null)
             {
                 Debug.LogError("LSystemRenderer: Prefab or Parent not assigned.");
                 return;
@@ -98,6 +101,17 @@ namespace ProceduralGraphics.LSystems.Rendering
                             currentLineRenderer.SetPosition(0, positions[0]);
                             currentLineRenderer.SetPosition(1, positions[1]);
                             lineRenderers.Add(currentLineRendererObject);
+
+                            // Instantiate the node prefab at the start of the line and set it as a child of the current branch
+                            GameObject nodeInstance = Instantiate(nodePrefab, positions[0], Quaternion.identity, currentLineRendererObject.transform);  // Set as a child of the line renderer
+                            pruningNodes.Add(nodeInstance);  // Keep track of nodes for further processing
+
+                            // Get the NodeBehaviour component and pass the current branch to it
+                            NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
+                            if (nodeBehaviour != null)
+                            {
+                                nodeBehaviour.Initialize(currentBranch); // Pass the current branch reference
+                            }
 
                             Debug.Log($"New LineRenderer created with positions: Start {positions[0]}, End {positions[1]}");
 
@@ -175,7 +189,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             FocusCameraOnPlant();
         }
 
-
         public void ClearAllObjects()
         {
             foreach (var lineRenderer in lineRenderers)
@@ -185,21 +198,17 @@ namespace ProceduralGraphics.LSystems.Rendering
                     Destroy(lineRenderer);
                 }
             }
+            foreach (var node in pruningNodes)
+            {
+                if (node != null)
+                {
+                    Destroy(node);
+                }
+            }
             lineRenderers.Clear();
+            pruningNodes.Clear();
 
             Debug.Log("Cleared all line renderers and nodes.");
-        }
-
-
-        private void MarkForDestruction(Transform parent)
-        {
-            foreach (Transform child in parent)
-            {
-                MarkForDestruction(child);  // Recursively destroy children
-            }
-
-            Debug.Log($"Destroyed object: {parent.name}");
-            Destroy(parent.gameObject);  // Destroy the parent object itself
         }
 
         private void RegeneratePlant()
@@ -283,9 +292,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
         }
 
-
-
-
         // Recursively loop through the branches starting from the root
         public void TraverseBranches(GameObject parentBranch)
         {
@@ -295,11 +301,9 @@ namespace ProceduralGraphics.LSystems.Rendering
             {
                 if (child.TryGetComponent(out LineRenderer childLineRenderer))
                 {
-                    TraverseBranches(child.gameObject);  // Recursive call
+                    TraverseBranches(child.gameObject);
                 }
             }
         }
-
-
     }
 }

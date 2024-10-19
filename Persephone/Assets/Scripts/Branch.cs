@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class Branch
 {
@@ -53,6 +53,12 @@ public class Branch
     public List<Branch> GetChildren()
     {
         return children;
+    }
+
+    // Clear all children
+    public void ClearChildren()
+    {
+        children.Clear();
     }
 
     // Recursively traverse the branches and print the structure
