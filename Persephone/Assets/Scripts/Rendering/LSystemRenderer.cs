@@ -15,15 +15,20 @@ namespace ProceduralGraphics.LSystems.Rendering
         private GameObject nodePrefab;
 
         [SerializeField]
+        public GameObject[] leafVariants; // Array to hold leaf variants
+
+        [SerializeField]
         private Transform lineRenderParent;
 
         private List<GameObject> lineRenderers = new List<GameObject>();
         private List<GameObject> pruningNodes = new List<GameObject>();
+        private List<GameObject> leaves = new List<GameObject>(); // List to track instantiated leaves
 
         private bool useMeshRenderer = false;
         private LSystemUIController uiController;
 
         private bool isStochastic = false;
+        private int selectedLeafVariantIndex = 0; // Track the selected leaf variant
 
         private void Start()
         {
@@ -32,6 +37,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             if (uiController != null)
             {
                 uiController.OnUseMeshToggleChanged += HandleMeshRendererToggleChanged;
+                uiController.OnLeafVariantSelected += OnLeafVariantSelected; // Subscribe to leaf variant selection event
             }
         }
 
@@ -44,9 +50,15 @@ namespace ProceduralGraphics.LSystems.Rendering
             RegeneratePlant();
         }
 
+        private void OnLeafVariantSelected(int index) // Handle leaf variant selection
+        {
+            selectedLeafVariantIndex = index;
+            Debug.Log($"Leaf variant {index} selected.");
+        }
+
         public override void Render(string lSystemString, float length, float angle)
         {
-            if (lineRendererPrefab == null || nodePrefab == null || lineRenderParent == null)
+            if (lineRendererPrefab == null || nodePrefab == null || leafVariants.Length == 0 || lineRenderParent == null)
             {
                 Debug.LogError("LSystemRenderer: Prefab or Parent not assigned.");
                 return;
@@ -109,13 +121,39 @@ namespace ProceduralGraphics.LSystems.Rendering
                             GameObject nodeInstance = Instantiate(nodePrefab, currentLineRendererObject.transform);
 
                             // Correct the node position relative to the LineRenderer
-                            // Since the LineRenderer is working in local space, convert the world position (positions[0]) to local space
                             nodeInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[0]);
-
-                            // Apply a small vertical offset to correct the node position if needed
                             nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0); // Adjust Y position
 
                             pruningNodes.Add(nodeInstance);
+
+                            // Instantiate leaves at the end of each branch (position[1])
+                            GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
+
+                            // Correct the leaf position relative to the LineRenderer
+                            leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[1]);
+
+                            // Apply a small vertical offset (Y-axis) to position the leaf above the branch
+                            leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
+
+                            // Add random rotation for more natural look
+                            leafInstance.transform.localRotation = Quaternion.Euler(
+                                Random.Range(0f, 360f), // Randomize Y-axis (upward) rotation
+                                Random.Range(0f, 360f), // Randomize rotation around X and Y for a natural tilt
+                                Random.Range(0f, 360f)
+                            );
+
+                            // Apply random scale variation for natural leaf sizes
+                            float randomScaleFactor = Random.Range(0.8f, 1.2f); // Leaves will vary in size between 80% and 120%
+                            leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
+
+                            // Optional: Apply a slight random positional offset to avoid uniform placement
+                            leafInstance.transform.localPosition += new Vector3(
+                                Random.Range(-0.05f, 0.05f), // Small offset on X-axis
+                                Random.Range(-0.05f, 0.05f), // Small offset on Y-axis
+                                Random.Range(-0.05f, 0.05f)  // Small offset on Z-axis
+                            );
+
+                            leaves.Add(leafInstance);
 
                             // Initialize the node behavior (if any)
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
@@ -206,10 +244,18 @@ namespace ProceduralGraphics.LSystems.Rendering
                     Destroy(node);
                 }
             }
+            foreach (var leaf in leaves)
+            {
+                if (leaf != null)
+                {
+                    Destroy(leaf);
+                }
+            }
             lineRenderers.Clear();
             pruningNodes.Clear();
+            leaves.Clear();
 
-            Debug.Log("Cleared all line renderers and nodes.");
+            Debug.Log("Cleared all line renderers, nodes, and leaves.");
         }
 
         private void RegeneratePlant()
@@ -281,7 +327,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             Debug.Log($"L-System Renderer rotated to {rotationValue} degrees.");
         }
 
-
         private Vector3 Stochastic3DAngle(float angle)
         {
             return new Vector3(Random.Range(-angle, angle), Random.Range(-angle, angle), Random.Range(-angle, angle));
@@ -315,7 +360,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                     return true;
                 }
             }
-            return false; 
+            return false;
         }
 
         public void SetAllNodesActive(bool isActive)

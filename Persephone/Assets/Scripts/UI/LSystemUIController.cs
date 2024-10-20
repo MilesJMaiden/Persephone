@@ -47,6 +47,9 @@ namespace ProceduralGraphics.LSystems.UI
         [SerializeField]
         private Slider rotationSlider;
 
+        [SerializeField] // New Leaf Variant Dropdown
+        private TMP_Dropdown leafVariantDropdown;
+
 
         [Header("L-System Configurations")]
         [SerializeField]
@@ -58,10 +61,12 @@ namespace ProceduralGraphics.LSystems.UI
         public event Action<LSystemConfig> OnGenerateRequested;
         public event Action<bool> OnRenderToggle;
         public event Action<bool> OnUseMeshToggleChanged;
+        public event Action<int> OnLeafVariantSelected; // Event for Leaf Variant Selection
 
         private void Start()
         {
             InitializeDropdown();
+            InitializeLeafVariantDropdown(); // Initialize leaf dropdown
             InitializeRotationSlider();
 
             iterationSlider.onValueChanged.AddListener(OnIterationSliderChanged);
@@ -74,7 +79,7 @@ namespace ProceduralGraphics.LSystems.UI
 
             stochasticToggle.onValueChanged.AddListener(OnStochasticToggleChanged);
             rotationSlider.onValueChanged.AddListener(OnRotationSliderChanged);
-
+            leafVariantDropdown.onValueChanged.AddListener(OnLeafVariantDropdownChanged); // Listener for leaf variant dropdown
         }
 
         private void InitializeDropdown()
@@ -87,6 +92,40 @@ namespace ProceduralGraphics.LSystems.UI
             }
             variantDropdown.AddOptions(options);
             variantDropdown.onValueChanged.AddListener(OnVariantDropdownChanged);
+        }
+
+        private void InitializeLeafVariantDropdown()
+        {
+            leafVariantDropdown.ClearOptions();
+
+            // Fetch the leafVariants array from the LSystemRenderer
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+
+            if (lSystemRenderer != null && lSystemRenderer.leafVariants.Length > 0)
+            {
+                var leafOptions = new List<string>();
+
+                // Add each prefab name to the dropdown options
+                foreach (var leafVariant in lSystemRenderer.leafVariants)
+                {
+                    if (leafVariant != null)
+                    {
+                        leafOptions.Add(leafVariant.name); // Use the prefab's name property
+                    }
+                }
+
+                leafVariantDropdown.AddOptions(leafOptions);
+            }
+            else
+            {
+                Debug.LogWarning("LSystemRenderer or leafVariants not set correctly.");
+            }
+        }
+
+
+        private void OnLeafVariantDropdownChanged(int index) // Event for leaf variant change
+        {
+            OnLeafVariantSelected?.Invoke(index); // Invoke the event with the selected index
         }
 
         private void OnAllNodesToggleChanged(bool isOn)
@@ -257,6 +296,7 @@ namespace ProceduralGraphics.LSystems.UI
             useMeshToggle.onValueChanged.RemoveListener(HandleUseMeshToggleChanged);
             allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged);
             stochasticToggle.onValueChanged.RemoveListener(OnStochasticToggleChanged);
+            leafVariantDropdown.onValueChanged.RemoveListener(OnLeafVariantDropdownChanged); // Remove listener for leaf variant dropdown
 
             rotationSlider.onValueChanged.RemoveListener(OnRotationSliderChanged);
         }
