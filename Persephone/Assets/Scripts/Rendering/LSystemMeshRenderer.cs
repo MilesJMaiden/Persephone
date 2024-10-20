@@ -9,8 +9,8 @@ namespace ProceduralGraphics.LSystems.Rendering
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
 
-        public int segments = 8; // Number of segments for cylinders
-        public float branchRadius = 0.05f; // Radius of each branch
+        public int segments = 8;
+        public float branchRadius = 0.05f;
 
         private void Awake()
         {
@@ -28,7 +28,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
         }
 
-        public override void Render(string lSystemString, float length, float angle, float randomOffset)
+        public override void Render(string lSystemString, float length, float angle)
         {
             Debug.Log("LSystemMeshRenderer: Render method called.");
 

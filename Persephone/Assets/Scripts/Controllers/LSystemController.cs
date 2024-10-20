@@ -18,11 +18,10 @@ namespace ProceduralGraphics.LSystems.Controllers
         [SerializeField]
         private LSystemGenerator generator;
 
-        // References to both renderers
         [SerializeField]
-        private RendererBase lineRenderer; // Assign LSystemRenderer
+        private RendererBase lineRenderer; 
         [SerializeField]
-        private RendererBase meshRenderer; // Assign LSystemMeshRenderer
+        private RendererBase meshRenderer;
 
         private void Start()
         {
@@ -41,7 +40,6 @@ namespace ProceduralGraphics.LSystems.Controllers
                 Debug.LogError("LSystemController: LSystemGenerator reference is not set.");
             }
 
-            // Assign default renderer (LineRenderer) and set active states
             if (lineRenderer != null && meshRenderer != null)
             {
                 generator.SetRenderer(lineRenderer);

@@ -27,48 +27,42 @@ namespace ProceduralGraphics.LSystems.UI
         private TMP_InputField angleInput;
 
         [SerializeField]
-        private TMP_InputField randomOffsetInput;
-
-        [SerializeField]
         private TMP_InputField lengthInput;
 
         [SerializeField]
         private Button generateButton;
 
         [SerializeField]
+        private Toggle isStochasticToggle;
+
+        [SerializeField]
         private Toggle renderToggle;
 
         [SerializeField]
-        private Toggle allNodesToggle; // New toggle for activating/deactivating all nodes
+        private Toggle allNodesToggle;
 
         [Header("L-System Configurations")]
         [SerializeField]
         private LSystemConfig[] lSystemConfigs;
 
         [SerializeField]
-        private Toggle is3DToggle;
-
-        [SerializeField]
         private Toggle useMeshToggle;
 
-        // Events for generating, rendering, toggling 3D, and mesh renderer
         public event Action<LSystemConfig> OnGenerateRequested;
         public event Action<bool> OnRenderToggle;
-        public event Action<bool> On3DToggleChanged;
         public event Action<bool> OnUseMeshToggleChanged;
 
         private void Start()
         {
             InitializeDropdown();
+
             iterationSlider.onValueChanged.AddListener(OnIterationSliderChanged);
             angleInput.onEndEdit.AddListener(OnAngleInputChanged);
-            randomOffsetInput.onEndEdit.AddListener(OnRandomOffsetInputChanged);
             lengthInput.onEndEdit.AddListener(OnLengthInputChanged);
             generateButton.onClick.AddListener(OnGenerateButtonClicked);
             renderToggle.onValueChanged.AddListener(OnRenderToggleChanged);
-            is3DToggle.onValueChanged.AddListener(OnIs3DToggleChanged);
             useMeshToggle.onValueChanged.AddListener(HandleUseMeshToggleChanged);
-            allNodesToggle.onValueChanged.AddListener(OnAllNodesToggleChanged); // Add listener for new toggle
+            allNodesToggle.onValueChanged.AddListener(OnAllNodesToggleChanged);
         }
 
         private void InitializeDropdown()
@@ -104,22 +98,20 @@ namespace ProceduralGraphics.LSystems.UI
 
             if (variantDropdown != null && index >= 0 && index < lSystemConfigs.Length)
             {
-                variantDropdown.Hide(); // Ensure the dropdown is hidden before continuing
+                variantDropdown.Hide();
                 UpdateUIWithConfig(lSystemConfigs[index]);
             }
 
-            // Re-enable the Input System UI Input Module after dropdown changes
             if (inputModule != null)
             {
                 StartCoroutine(ReenableInputModule(inputModule));
             }
         }
 
-        // Coroutine to safely re-enable the Input System after dropdown changes
         private IEnumerator ReenableInputModule(InputSystemUIInputModule inputModule)
         {
-            yield return new WaitForEndOfFrame();  // Wait until end of frame
-            inputModule.enabled = true;  // Re-enable the input system module
+            yield return new WaitForEndOfFrame();
+            inputModule.enabled = true;
         }
 
         private void UpdateUIWithConfig(LSystemConfig config)
@@ -143,17 +135,7 @@ namespace ProceduralGraphics.LSystems.UI
             if (!float.TryParse(value, out float angle))
             {
                 Debug.LogWarning("Invalid angle input. Using default value.");
-                angleInput.text = "25"; // Default value
-            }
-        }
-
-        // Add this method to handle random offset input
-        private void OnRandomOffsetInputChanged(string value)
-        {
-            if (!float.TryParse(value, out float offset))
-            {
-                Debug.LogWarning("Invalid random offset input. Using default value of 0.");
-                randomOffsetInput.text = "0";
+                angleInput.text = "25";
             }
         }
 
@@ -162,7 +144,7 @@ namespace ProceduralGraphics.LSystems.UI
             if (!float.TryParse(value, out float length))
             {
                 Debug.LogWarning("Invalid length input. Using default value.");
-                lengthInput.text = "1"; // Default value
+                lengthInput.text = "1";
             }
         }
 
@@ -177,8 +159,8 @@ namespace ProceduralGraphics.LSystems.UI
                 if (!float.TryParse(angleInput.text, out float parsedAngle))
                 {
                     Debug.LogWarning("Invalid angle input. Using default value of 25.");
-                    parsedAngle = 25f; // Default value
-                    angleInput.text = parsedAngle.ToString(); // Set the default in the UI as well
+                    parsedAngle = 25f; // Default
+                    angleInput.text = parsedAngle.ToString();
                 }
 
                 // Validate and parse length input
@@ -186,31 +168,21 @@ namespace ProceduralGraphics.LSystems.UI
                 {
                     Debug.LogWarning("Invalid length input. Using default value of 1.");
                     parsedLength = 1f; // Default value
-                    lengthInput.text = parsedLength.ToString(); // Set the default in the UI as well
-                }
-
-                // Parse random offset input
-                if (!float.TryParse(randomOffsetInput.text, out float randomOffset))
-                {
-                    Debug.LogWarning("Invalid random offset input. Using default value of 0.");
-                    randomOffset = 0f; // Default value
-                    randomOffsetInput.text = randomOffset.ToString(); // Set the default in the UI as well
+                    lengthInput.text = parsedLength.ToString();
                 }
 
                 // Set the parsed values to the config
                 config.DefaultIterations = Mathf.RoundToInt(iterationSlider.value);
                 config.Angle = parsedAngle;
                 config.Length = parsedLength;
-                config.RandomOffset = randomOffset; // Set the random offset
 
-                // Trigger the event to generate the plant
                 OnGenerateRequested?.Invoke(config);
 
                 // Update the render call to include random offset
                 var renderer = FindObjectOfType<LSystemRenderer>();
                 if (renderer != null)
                 {
-                    renderer.Render(config.Axiom, parsedLength, parsedAngle, randomOffset);
+                    renderer.Render(config.Axiom, parsedLength, parsedAngle);
                 }
             }
             else
@@ -219,17 +191,10 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
-
-        private void OnIs3DToggleChanged(bool is3D)
-        {
-            Debug.Log($"Is3D Toggle Changed: {is3D}");
-            On3DToggleChanged?.Invoke(is3D);
-        }
-
         private void HandleUseMeshToggleChanged(bool isMeshOn)
         {
             Debug.Log($"Use Mesh Renderer Toggle Changed: {isMeshOn}");
-            OnUseMeshToggleChanged?.Invoke(isMeshOn);  // Proper event invocation
+            OnUseMeshToggleChanged?.Invoke(isMeshOn);
         }
 
         private void OnRenderToggleChanged(bool isOn)
@@ -244,15 +209,13 @@ namespace ProceduralGraphics.LSystems.UI
 
         private void OnDestroy()
         {
-            // Remove listeners to prevent memory leaks
             iterationSlider.onValueChanged.RemoveListener(OnIterationSliderChanged);
             angleInput.onEndEdit.RemoveListener(OnAngleInputChanged);
             lengthInput.onEndEdit.RemoveListener(OnLengthInputChanged);
             generateButton.onClick.RemoveListener(OnGenerateButtonClicked);
             renderToggle.onValueChanged.RemoveListener(OnRenderToggleChanged);
-            is3DToggle.onValueChanged.RemoveListener(OnIs3DToggleChanged);
             useMeshToggle.onValueChanged.RemoveListener(HandleUseMeshToggleChanged);
-            allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged); // Remove listener for the new toggle
+            allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged);
         }
     }
 }

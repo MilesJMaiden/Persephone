@@ -32,7 +32,7 @@ namespace ProceduralGraphics.LSystems.Generation
                 for (int i = 0; i < currentString.Length; i++)
                 {
                     byte byteC = currentString[i];
-                    char c = (char)byteC; // Convert byte to char (properly handled)
+                    char c = (char)byteC;
 
                     bool ruleApplied = false;
 
@@ -46,10 +46,9 @@ namespace ProceduralGraphics.LSystems.Generation
                     {
                         if (rules[j].Predecessor == c)
                         {
-                            // Instead of using ToString(), append the characters directly
                             for (int k = 0; k < rules[j].SuccessorFixed.Length; k++)
                             {
-                                nextString.Append(rules[j].SuccessorFixed[k]); // Append each character directly
+                                nextString.Append(rules[j].SuccessorFixed[k]);
                             }
                             ruleApplied = true;
                             break;
@@ -58,7 +57,7 @@ namespace ProceduralGraphics.LSystems.Generation
 
                     if (!ruleApplied)
                     {
-                        nextString.Append(byteC); // If no rule was applied, append the original byte
+                        nextString.Append(byteC);
                     }
                 }
 
@@ -72,7 +71,7 @@ namespace ProceduralGraphics.LSystems.Generation
             for (int i = 0; i < currentString.Length; i++)
             {
                 byte byteChar = currentString[i];
-                char finalChar = (char)byteChar; // Properly convert byte to char
+                char finalChar = (char)byteChar;
                 result.Add(finalChar);
             }
         }

@@ -9,18 +9,18 @@ namespace ProceduralGraphics.LSystems.Rendering
     public class LSystemRenderer : RendererBase
     {
         [SerializeField]
-        private GameObject lineRendererPrefab;  // Prefab for the line renderer
+        private GameObject lineRendererPrefab;
 
         [SerializeField]
-        private GameObject nodePrefab;  // Prefab for the node to be instantiated at branch ends
+        private GameObject nodePrefab;
 
         [SerializeField]
-        private Transform lineRenderParent; // Parent object for line renderers
+        private Transform lineRenderParent;
 
-        private List<GameObject> lineRenderers = new List<GameObject>();  // Tracks line renderers
-        private List<GameObject> pruningNodes = new List<GameObject>();  // Tracks node prefabs
-        private bool is3D = false;
-        private bool useMeshRenderer = false;  // Handle mesh rendering
+        private List<GameObject> lineRenderers = new List<GameObject>();
+        private List<GameObject> pruningNodes = new List<GameObject>();
+
+        private bool useMeshRenderer = false;
         private LSystemUIController uiController;
 
         private void Start()
@@ -29,18 +29,8 @@ namespace ProceduralGraphics.LSystems.Rendering
 
             if (uiController != null)
             {
-                uiController.On3DToggleChanged += Handle3DToggleChanged;
                 uiController.OnUseMeshToggleChanged += HandleMeshRendererToggleChanged;
             }
-        }
-
-        private void Handle3DToggleChanged(bool isOn)
-        {
-            is3D = isOn;
-            Debug.Log($"3D Mode Enabled: {is3D}");
-
-            ClearAllObjects();
-            RegeneratePlant();
         }
 
         private void HandleMeshRendererToggleChanged(bool isOn)
@@ -52,7 +42,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             RegeneratePlant();
         }
 
-        public override void Render(string lSystemString, float length, float angle, float randomOffset)
+        public override void Render(string lSystemString, float length, float angle)
         {
             if (lineRendererPrefab == null || nodePrefab == null || lineRenderParent == null)
             {
@@ -60,10 +50,10 @@ namespace ProceduralGraphics.LSystems.Rendering
                 return;
             }
 
-            StartCoroutine(RenderLSystemCoroutine(lSystemString, length, angle, randomOffset));
+            StartCoroutine(RenderLSystemCoroutine(lSystemString, length, angle));
         }
 
-        private IEnumerator RenderLSystemCoroutine(string lSystemString, float length, float angle, float randomOffset)
+        private IEnumerator RenderLSystemCoroutine(string lSystemString, float length, float angle)
         {
             ClearAllObjects();  // Clear previous objects before rendering
 
@@ -86,14 +76,9 @@ namespace ProceduralGraphics.LSystems.Rendering
             {
                 switch (command)
                 {
-                    case 'F':  // Move forward
-                               // Update direction for 3D rendering
-                        Vector3 direction = is3D ? RandomDirection3D() : Vector3.up;
-
-                        // Calculate the new rotation with the random offset applied
-                        float appliedAngle = angle + (randomOffset > 0 ? Random.Range(-randomOffset, randomOffset) : 0);
-                        Quaternion rotationOffset = Quaternion.Euler(0, appliedAngle, 0); // Y-axis rotation for offset
-                        currentRotation *= rotationOffset; // Apply rotation to current rotation
+                    case 'F': 
+                             
+                        Vector3 direction = Vector3.up;
 
                         // Calculate the next position based on the current rotation and direction
                         Vector3 nextPosition = currentPosition + currentRotation * direction * length;
@@ -101,10 +86,10 @@ namespace ProceduralGraphics.LSystems.Rendering
                         // Check if a node already exists at the next position
                         if (!NodeExistsAtPosition(nextPosition))
                         {
-                            positions.Add(nextPosition); // Only add if no node exists
+                            positions.Add(nextPosition); //add if no node exists
                         }
 
-                        if (positions.Count == 2)  // When we have both positions
+                        if (positions.Count == 2) 
                         {
                             currentLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
                             currentLineRenderer = currentLineRendererObject.GetComponent<LineRenderer>();
@@ -112,7 +97,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                             // Set the positions for this LineRenderer
                             currentLineRenderer.positionCount = 2;
                             currentLineRenderer.SetPosition(0, positions[0]);
-                            currentLineRenderer.SetPosition(1, positions[1]); // Use the updated nextPosition
+                            currentLineRenderer.SetPosition(1, positions[1]);
                             lineRenderers.Add(currentLineRendererObject);
 
                             // Instantiate the node prefab at the start of the line and set it as a child of the current branch
@@ -122,7 +107,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
                             if (nodeBehaviour != null)
                             {
-                                nodeBehaviour.Initialize(currentBranch); // Pass the current branch reference
+                                nodeBehaviour.Initialize(currentBranch);
                             }
 
                             Branch newBranch = new Branch(currentLineRendererObject, null);
@@ -147,34 +132,34 @@ namespace ProceduralGraphics.LSystems.Rendering
 
                             // Update currentBranch and currentPosition
                             currentBranch = newBranch;
-                            currentPosition = nextPosition; // Move to the next position
-                            positions.Clear(); // Clear positions for the next segment
-                            positions.Add(currentPosition); // Start the new segment from the current position
+                            currentPosition = nextPosition;
+                            positions.Clear();
+                            positions.Add(currentPosition);
                         }
                         break;
 
                     case '+':
-                        currentRotation *= Quaternion.Euler(is3D ? Random3DAngle(angle) : new Vector3(0, 0, -angle));
+                        currentRotation *= Quaternion.Euler(Random3DAngle(angle));
                         break;
 
                     case '-':
-                        currentRotation *= Quaternion.Euler(is3D ? Random3DAngle(-angle) : new Vector3(0, 0, angle));
+                        currentRotation *= Quaternion.Euler(Random3DAngle(-angle));
                         break;
 
                     case '[':
-                        stack.Push(new BranchState(currentPosition, currentRotation, currentBranch)); // Save current state
+                        stack.Push(new BranchState(currentPosition, currentRotation, currentBranch));
                         break;
 
                     case ']':
                         if (stack.Count > 0)
                         {
                             BranchState state = stack.Pop();
-                            currentPosition = state.position; // Restore position
-                            currentRotation = state.rotation; // Restore rotation
-                            currentBranch = state.branch; // Restore branch
+                            currentPosition = state.position;
+                            currentRotation = state.rotation;
+                            currentBranch = state.branch;
 
                             positions.Clear();
-                            positions.Add(currentPosition); // Start the new segment from the restored position
+                            positions.Add(currentPosition);
                         }
                         break;
 
@@ -183,7 +168,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
                 }
 
-                yield return null; // Yield to prevent editor freezing
+                yield return null;
             }
 
             Debug.Log($"Rendered {branches.Count} branches.");
@@ -232,9 +217,8 @@ namespace ProceduralGraphics.LSystems.Rendering
                 return;
             }
 
-            // Adjust camera position to fully frame the plant based on its bounds
             float maxDimension = Mathf.Max(plantBounds.size.x, plantBounds.size.y, plantBounds.size.z);
-            float cameraDistance = maxDimension * 1.5f; // Adjust this factor for framing
+            float cameraDistance = maxDimension * 1.5f;
 
             mainCamera.transform.position = plantCenter - mainCamera.transform.forward * cameraDistance;
             mainCamera.transform.LookAt(plantCenter);
@@ -246,7 +230,7 @@ namespace ProceduralGraphics.LSystems.Rendering
         {
             if (lineRenderers.Count == 0)
             {
-                return new Bounds(lineRenderParent.position, Vector3.zero); // If no line renderers, return empty bounds
+                return new Bounds(lineRenderParent.position, Vector3.zero);
             }
 
             Bounds bounds = new Bounds(lineRenderers[0].transform.position, Vector3.zero);
@@ -269,11 +253,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             return bounds;
         }
 
-        private Vector3 RandomDirection3D()
-        {
-            return new Vector3(Random.Range(-1f, 1f), Random.Range(0.5f, 1f), Random.Range(-1f, 1f)).normalized;
-        }
-
         private Vector3 Random3DAngle(float angle)
         {
             return new Vector3(Random.Range(-angle, angle), Random.Range(-angle, angle), Random.Range(-angle, angle));
@@ -283,7 +262,7 @@ namespace ProceduralGraphics.LSystems.Rendering
         {
             public Vector3 position;
             public Quaternion rotation;
-            public Branch branch;  // The branch that corresponds to this state
+            public Branch branch;
 
             public BranchState(Vector3 pos, Quaternion rot, Branch currentBranch)
             {
@@ -293,17 +272,16 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
         }
 
-        // Method to check if a node already exists at a given position
         private bool NodeExistsAtPosition(Vector3 position)
         {
             foreach (var node in pruningNodes)
             {
-                if (node != null && Vector3.Distance(node.transform.position, position) < 0.01f) // Using a small threshold
+                if (node != null && Vector3.Distance(node.transform.position, position) < 0.01f)
                 {
-                    return true; // Node exists at this position
+                    return true;
                 }
             }
-            return false; // No node exists at this position
+            return false; 
         }
 
         public void SetAllNodesActive(bool isActive)
@@ -318,7 +296,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             Debug.Log($"All nodes set to active: {isActive}");
         }
 
-        // Recursively loop through the branches starting from the root
         public void TraverseBranches(GameObject parentBranch)
         {
             Debug.Log($"Traversing branch: {parentBranch.name}");
@@ -333,4 +310,3 @@ namespace ProceduralGraphics.LSystems.Rendering
         }
     }
 }
-

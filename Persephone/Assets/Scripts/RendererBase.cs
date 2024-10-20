@@ -14,6 +14,6 @@ namespace ProceduralGraphics.LSystems.Rendering
         /// <param name="lSystemString">The generated L-System string.</param>
         /// <param name="length">The length of each branch segment.</param>
         /// <param name="angle">The angle (in degrees) used for turning.</param>
-        public abstract void Render(string lSystemString, float length, float angle, float randomOffset);
+        public abstract void Render(string lSystemString, float length, float angle);
     }
 }

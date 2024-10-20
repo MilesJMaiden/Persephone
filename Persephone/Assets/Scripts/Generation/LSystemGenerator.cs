@@ -12,7 +12,7 @@ namespace ProceduralGraphics.LSystems.Generation
         public int Iterations { get; set; }
         public float Angle { get; set; }
         public float Length { get; set; }
-        public float RandomOffset { get; set; } // Add this line to define the random offset
+
         private RendererBase renderer;
 
         public void GenerateLSystem()
@@ -33,7 +33,7 @@ namespace ProceduralGraphics.LSystems.Generation
 
             Debug.Log($"Generated L-System String: {currentString}");
 
-            renderer.Render(currentString, Length, Angle, RandomOffset); // Pass the random offset
+            renderer.Render(currentString, Length, Angle);
         }
 
         private string ApplyRules(string input)
@@ -99,9 +99,7 @@ namespace ProceduralGraphics.LSystems.Generation
 
             if (renderer != null)
             {
-                // Ensure you have a random offset value available
-                float randomOffset = 0; // Set this from your UI or wherever you manage it
-                renderer.Render(currentString, Length, Angle, randomOffset);
+                renderer.Render(currentString, Length, Angle);
                 Debug.Log("New branches generated successfully.");
             }
             else

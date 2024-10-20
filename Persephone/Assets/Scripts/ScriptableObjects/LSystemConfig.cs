@@ -32,11 +32,6 @@ namespace ProceduralGraphics.LSystems.ScriptableObjects
         public float Angle;
 
         /// <summary>
-        /// The random angle offset (default is 0).
-        /// </summary>
-        public float RandomOffset;
-
-        /// <summary>
         /// The length of each branch segment in the L-System.
         /// </summary>
         public float Length;

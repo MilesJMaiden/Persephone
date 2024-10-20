@@ -29,7 +29,6 @@ namespace ProceduralGraphics.LSystems.Generation
                 nativeRules[i] = new JobRule(Rules[i].Predecessor, Rules[i].Successor);
             }
 
-            // Prepare the result NativeList
             NativeList<char> result = new NativeList<char>(Allocator.TempJob);
 
             // Set up the job
