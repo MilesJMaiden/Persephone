@@ -4069,7 +4069,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_IsOn: 1
+  m_IsOn: 0
 --- !u!1 &1621425080
 GameObject:
   m_ObjectHideFlags: 0
@@ -4525,8 +4525,10 @@ MonoBehaviour:
   angleInput: {fileID: 1994590398}
   lengthInput: {fileID: 1430867294}
   generateButton: {fileID: 107706555}
+  isStochasticToggle: {fileID: 0}
   renderToggle: {fileID: 250237551}
   allNodesToggle: {fileID: 336015892}
+  stochasticToggle: {fileID: 1562601986}
   lSystemConfigs:
   - {fileID: 11400000, guid: d98a8f2fb5bb7b64a866f5627ac967de, type: 2}
   - {fileID: 11400000, guid: 6ce781510532da34ab2f95bcf55af75a, type: 2}

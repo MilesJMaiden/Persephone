@@ -41,6 +41,9 @@ namespace ProceduralGraphics.LSystems.UI
         [SerializeField]
         private Toggle allNodesToggle;
 
+        [SerializeField]
+        private Toggle stochasticToggle;
+
         [Header("L-System Configurations")]
         [SerializeField]
         private LSystemConfig[] lSystemConfigs;
@@ -63,6 +66,9 @@ namespace ProceduralGraphics.LSystems.UI
             renderToggle.onValueChanged.AddListener(OnRenderToggleChanged);
             useMeshToggle.onValueChanged.AddListener(HandleUseMeshToggleChanged);
             allNodesToggle.onValueChanged.AddListener(OnAllNodesToggleChanged);
+
+            stochasticToggle.onValueChanged.AddListener(OnStochasticToggleChanged);
+
         }
 
         private void InitializeDropdown()
@@ -105,6 +111,16 @@ namespace ProceduralGraphics.LSystems.UI
             if (inputModule != null)
             {
                 StartCoroutine(ReenableInputModule(inputModule));
+            }
+        }
+
+        private void OnStochasticToggleChanged(bool isOn)
+        {
+            // Assuming the LSystemRenderer is responsible for rendering
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
+            {
+                lSystemRenderer.SetStochasticMode(isOn);  // Example setter to update the mode
             }
         }
 

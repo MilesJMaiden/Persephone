@@ -23,6 +23,8 @@ namespace ProceduralGraphics.LSystems.Rendering
         private bool useMeshRenderer = false;
         private LSystemUIController uiController;
 
+        private bool isStochastic = false;
+
         private void Start()
         {
             uiController = FindObjectOfType<LSystemUIController>();
@@ -139,11 +141,11 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
 
                     case '+':
-                        currentRotation *= Quaternion.Euler(Random3DAngle(angle));
+                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(angle) : Deterministic3DAngle(angle));
                         break;
 
                     case '-':
-                        currentRotation *= Quaternion.Euler(Random3DAngle(-angle));
+                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(-angle) : Deterministic3DAngle(-angle));
                         break;
 
                     case '[':
@@ -205,6 +207,12 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
         }
 
+        public void SetStochasticMode(bool isStochastic)
+        {
+            this.isStochastic = isStochastic;
+            Debug.Log($"L-System Renderer set to {(isStochastic ? "Stochastic" : "Deterministic")} mode.");
+        }
+
         private void FocusCameraOnPlant()
         {
             Bounds plantBounds = CalculateBounds();
@@ -253,9 +261,14 @@ namespace ProceduralGraphics.LSystems.Rendering
             return bounds;
         }
 
-        private Vector3 Random3DAngle(float angle)
+        private Vector3 Stochastic3DAngle(float angle)
         {
             return new Vector3(Random.Range(-angle, angle), Random.Range(-angle, angle), Random.Range(-angle, angle));
+        }
+
+        private Vector3 Deterministic3DAngle(float angle)
+        {
+            return new Vector3(angle, angle, angle);
         }
 
         public struct BranchState
