@@ -78,8 +78,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             {
                 switch (command)
                 {
-                    case 'F': 
-                             
+                    case 'F':
                         Vector3 direction = Vector3.up;
 
                         // Calculate the next position based on the current rotation and direction
@@ -88,30 +87,44 @@ namespace ProceduralGraphics.LSystems.Rendering
                         // Check if a node already exists at the next position
                         if (!NodeExistsAtPosition(nextPosition))
                         {
-                            positions.Add(nextPosition); //add if no node exists
+                            positions.Add(nextPosition); // Add if no node exists
                         }
 
-                        if (positions.Count == 2) 
+                        if (positions.Count == 2)
                         {
+                            // Instantiate the line renderer as a child of the current parent
                             currentLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
                             currentLineRenderer = currentLineRendererObject.GetComponent<LineRenderer>();
 
-                            // Set the positions for this LineRenderer
+                            currentLineRenderer.useWorldSpace = false; // Ensure it works in local space
+
+                            // Set the positions for this LineRenderer (these positions are in world space)
                             currentLineRenderer.positionCount = 2;
-                            currentLineRenderer.SetPosition(0, positions[0]);
-                            currentLineRenderer.SetPosition(1, positions[1]);
+                            currentLineRenderer.SetPosition(0, positions[0]);  // World space position
+                            currentLineRenderer.SetPosition(1, positions[1]);  // World space position
+
                             lineRenderers.Add(currentLineRendererObject);
 
-                            // Instantiate the node prefab at the start of the line and set it as a child of the current branch
-                            GameObject nodeInstance = Instantiate(nodePrefab, positions[0], Quaternion.identity, currentLineRendererObject.transform);
+                            // Instantiate the node prefab as a child of the LineRenderer object
+                            GameObject nodeInstance = Instantiate(nodePrefab, currentLineRendererObject.transform);
+
+                            // Correct the node position relative to the LineRenderer
+                            // Since the LineRenderer is working in local space, convert the world position (positions[0]) to local space
+                            nodeInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[0]);
+
+                            // Apply a small vertical offset to correct the node position if needed
+                            nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0); // Adjust Y position
+
                             pruningNodes.Add(nodeInstance);
 
+                            // Initialize the node behavior (if any)
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
                             if (nodeBehaviour != null)
                             {
                                 nodeBehaviour.Initialize(currentBranch);
                             }
 
+                            // Create a new branch and set up its relationships
                             Branch newBranch = new Branch(currentLineRendererObject, null);
 
                             // Connect the new branch to its parent if applicable
@@ -260,6 +273,14 @@ namespace ProceduralGraphics.LSystems.Rendering
 
             return bounds;
         }
+
+        public void RotateRenderer(float rotationValue)
+        {
+            // Apply the rotation to the parent transform or another relevant object
+            transform.rotation = Quaternion.Euler(0, rotationValue, 0);  // Rotating around the Y-axis
+            Debug.Log($"L-System Renderer rotated to {rotationValue} degrees.");
+        }
+
 
         private Vector3 Stochastic3DAngle(float angle)
         {

@@ -44,6 +44,10 @@ namespace ProceduralGraphics.LSystems.UI
         [SerializeField]
         private Toggle stochasticToggle;
 
+        [SerializeField]
+        private Slider rotationSlider;
+
+
         [Header("L-System Configurations")]
         [SerializeField]
         private LSystemConfig[] lSystemConfigs;
@@ -58,6 +62,7 @@ namespace ProceduralGraphics.LSystems.UI
         private void Start()
         {
             InitializeDropdown();
+            InitializeRotationSlider();
 
             iterationSlider.onValueChanged.AddListener(OnIterationSliderChanged);
             angleInput.onEndEdit.AddListener(OnAngleInputChanged);
@@ -68,6 +73,7 @@ namespace ProceduralGraphics.LSystems.UI
             allNodesToggle.onValueChanged.AddListener(OnAllNodesToggleChanged);
 
             stochasticToggle.onValueChanged.AddListener(OnStochasticToggleChanged);
+            rotationSlider.onValueChanged.AddListener(OnRotationSliderChanged);
 
         }
 
@@ -207,6 +213,24 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
+        private void OnRotationSliderChanged(float value)
+        {
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
+            {
+                lSystemRenderer.RotateRenderer(value);
+            }
+        }
+
+        private void InitializeRotationSlider()
+        {
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
+            {
+                rotationSlider.value = lSystemRenderer.transform.rotation.eulerAngles.y;
+            }
+        }
+
         private void HandleUseMeshToggleChanged(bool isMeshOn)
         {
             Debug.Log($"Use Mesh Renderer Toggle Changed: {isMeshOn}");
@@ -232,6 +256,9 @@ namespace ProceduralGraphics.LSystems.UI
             renderToggle.onValueChanged.RemoveListener(OnRenderToggleChanged);
             useMeshToggle.onValueChanged.RemoveListener(HandleUseMeshToggleChanged);
             allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged);
+            stochasticToggle.onValueChanged.RemoveListener(OnStochasticToggleChanged);
+
+            rotationSlider.onValueChanged.RemoveListener(OnRotationSliderChanged);
         }
     }
 }
