@@ -40,10 +40,5 @@ namespace ProceduralGraphics.LSystems.ScriptableObjects
         /// The default number of iterations to apply the production rules.
         /// </summary>
         public int DefaultIterations;
-
-        /// <summary>
-        /// The list of production rules specifically for 3D variants of the plant.
-        /// </summary>
-        public List<Rule> Rules3D;
     }
 }

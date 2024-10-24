@@ -12,16 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
   m_Name: MapleTreeConfig
   m_EditorClassIdentifier: 
-  Name: Maple Tree (Acer)
+  Name: Maple Tree (Acer saccharum)
   Axiom: F
   Rules:
   - Predecessor: 70
-    Successor: FF[-F]F[+F]
-  - Predecessor: 88
-    Successor: F[+X][-X]F
-  Angle: 30
-  Length: 0.8
-  DefaultIterations: 5
+    Successor: F[+FTL][-FTL]
+  - Predecessor: 84
+    Successor: T
+  - Predecessor: 76
+    Successor: L
+  Angle: 25
+  Length: 1.2
+  DefaultIterations: 4
   Rules3D:
   - Predecessor: 70
     Successor: FF[-F]F[+F]

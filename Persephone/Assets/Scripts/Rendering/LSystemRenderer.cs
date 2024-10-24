@@ -74,6 +74,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             Stack<BranchState> stack = new Stack<BranchState>();
             Vector3 currentPosition = Vector3.zero;
             Quaternion currentRotation = Quaternion.identity;
+            float currentThickness = 0.1f; // Default thickness for the branches
 
             Branch mainParentBranch = null;
             GameObject currentParent = lineRenderParent.gameObject;
@@ -115,6 +116,10 @@ namespace ProceduralGraphics.LSystems.Rendering
                             currentLineRenderer.SetPosition(0, positions[0]);  // World space position
                             currentLineRenderer.SetPosition(1, positions[1]);  // World space position
 
+                            // Set the thickness of the branch
+                            currentLineRenderer.startWidth = currentThickness;
+                            currentLineRenderer.endWidth = currentThickness;
+
                             lineRenderers.Add(currentLineRendererObject);
 
                             // Instantiate the node prefab as a child of the LineRenderer object
@@ -125,35 +130,6 @@ namespace ProceduralGraphics.LSystems.Rendering
                             nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0); // Adjust Y position
 
                             pruningNodes.Add(nodeInstance);
-
-                            // Instantiate leaves at the end of each branch (position[1])
-                            GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
-
-                            // Correct the leaf position relative to the LineRenderer
-                            leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[1]);
-
-                            // Apply a small vertical offset (Y-axis) to position the leaf above the branch
-                            leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
-
-                            // Add random rotation for more natural look
-                            leafInstance.transform.localRotation = Quaternion.Euler(
-                                Random.Range(0f, 360f), // Randomize Y-axis (upward) rotation
-                                Random.Range(0f, 360f), // Randomize rotation around X and Y for a natural tilt
-                                Random.Range(0f, 360f)
-                            );
-
-                            // Apply random scale variation for natural leaf sizes
-                            float randomScaleFactor = Random.Range(0.8f, 1.2f); // Leaves will vary in size between 80% and 120%
-                            leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
-
-                            // Optional: Apply a slight random positional offset to avoid uniform placement
-                            leafInstance.transform.localPosition += new Vector3(
-                                Random.Range(-0.05f, 0.05f), // Small offset on X-axis
-                                Random.Range(-0.05f, 0.05f), // Small offset on Y-axis
-                                Random.Range(-0.05f, 0.05f)  // Small offset on Z-axis
-                            );
-
-                            leaves.Add(leafInstance);
 
                             // Initialize the node behavior (if any)
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
@@ -189,6 +165,43 @@ namespace ProceduralGraphics.LSystems.Rendering
                             positions.Clear();
                             positions.Add(currentPosition);
                         }
+                        break;
+
+                    case 'L':  // Case for instantiating leaves
+                               // Instantiate the leaf prefab at the current end of the branch (position[1])
+                        GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
+
+                        // Correct the leaf position relative to the LineRenderer
+                        leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
+
+                        // Apply a small vertical offset (Y-axis) to position the leaf above the branch
+                        leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
+
+                        // Add random rotation for more natural look
+                        leafInstance.transform.localRotation = Quaternion.Euler(
+                            Random.Range(0f, 360f), // Randomize Y-axis (upward) rotation
+                            Random.Range(0f, 360f), // Randomize rotation around X and Y for a natural tilt
+                            Random.Range(0f, 360f)
+                        );
+
+                        // Apply random scale variation for natural leaf sizes
+                        float randomScaleFactor = Random.Range(0.8f, 1.2f); // Leaves will vary in size between 80% and 120%
+                        leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
+
+                        // Optional: Apply a slight random positional offset to avoid uniform placement
+                        leafInstance.transform.localPosition += new Vector3(
+                            Random.Range(-0.05f, 0.05f), // Small offset on X-axis
+                            Random.Range(-0.05f, 0.05f), // Small offset on Y-axis
+                            Random.Range(-0.05f, 0.05f)  // Small offset on Z-axis
+                        );
+
+                        leaves.Add(leafInstance);
+                        break;
+
+                    case 'T':  // New case to adjust branch thickness
+                        float thicknessChangeFactor = Random.Range(0.7f, 1.3f); // Randomize the thickness slightly
+                        currentThickness *= thicknessChangeFactor; // Apply the thickness change to the current branch
+                        Debug.Log($"Branch thickness changed to {currentThickness}");
                         break;
 
                     case '+':
@@ -227,6 +240,9 @@ namespace ProceduralGraphics.LSystems.Rendering
             Debug.Log($"Rendered {branches.Count} branches.");
             FocusCameraOnPlant();
         }
+
+
+
 
         public void ClearAllObjects()
         {

@@ -16,7 +16,7 @@ MonoBehaviour:
   Axiom: F
   Rules:
   - Predecessor: 70
-    Successor: F[+F][F]F
+    Successor: F[+F][F]FL
   - Predecessor: 88
     Successor: F[-X][+X]
   Angle: 30

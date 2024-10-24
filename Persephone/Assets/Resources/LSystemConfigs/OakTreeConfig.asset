@@ -12,16 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
   m_Name: OakTreeConfig
   m_EditorClassIdentifier: 
-  Name: Oak Tree (Quercus)
+  Name: Oak Tree (Quercus robur)
   Axiom: F
   Rules:
   - Predecessor: 70
-    Successor: FF[-F]F[+F]
-  - Predecessor: 88
-    Successor: F[-X][+X]
+    Successor: F[+F-TLF][-FT+L]
+  - Predecessor: 84
+    Successor: T
+  - Predecessor: 76
+    Successor: L
   Angle: 30
-  Length: 1
-  DefaultIterations: 5
+  Length: 1.5
+  DefaultIterations: 4
   Rules3D:
   - Predecessor: 70
     Successor: FF[-F]F[+F]
