@@ -237,6 +237,8 @@ namespace ProceduralGraphics.LSystems.UI
                 config.Angle = parsedAngle;
                 config.Length = parsedLength;
 
+                rotationSlider.value = 0;
+
                 OnGenerateRequested?.Invoke(config);
 
                 // Update the render call to include random offset
