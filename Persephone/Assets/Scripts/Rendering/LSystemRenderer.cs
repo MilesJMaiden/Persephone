@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using ProceduralGraphics.LSystems.UI;
 using System.Collections;
+using ProceduralGraphics.LSystems.ScriptableObjects;
 
 namespace ProceduralGraphics.LSystems.Rendering
 {
@@ -56,7 +57,7 @@ namespace ProceduralGraphics.LSystems.Rendering
             Debug.Log($"Leaf variant {index} selected.");
         }
 
-        public override void Render(string lSystemString, float length, float angle)
+        public override void Render(LSystemConfig config)
         {
             if (lineRendererPrefab == null || nodePrefab == null || leafVariants.Length == 0 || lineRenderParent == null)
             {
@@ -64,84 +65,70 @@ namespace ProceduralGraphics.LSystems.Rendering
                 return;
             }
 
-            StartCoroutine(RenderLSystemCoroutine(lSystemString, length, angle));
+            StartCoroutine(RenderLSystemCoroutine(config));
         }
 
-        private IEnumerator RenderLSystemCoroutine(string lSystemString, float length, float angle)
+
+        private IEnumerator RenderLSystemCoroutine(LSystemConfig config)
         {
             ClearAllObjects();  // Clear previous objects before rendering
 
             Stack<BranchState> stack = new Stack<BranchState>();
             Vector3 currentPosition = Vector3.zero;
             Quaternion currentRotation = Quaternion.identity;
-            float currentThickness = 0.1f; // Default thickness for the branches
+            float currentThickness = config.Thickness;  // Initial thickness from config
+            float currentLength = config.Length;  // Initial branch length from config
 
             Branch mainParentBranch = null;
             GameObject currentParent = lineRenderParent.gameObject;
             GameObject currentLineRendererObject = null;
             LineRenderer currentLineRenderer = null;
 
-            // Initialize the positions list with the current position
             List<Vector3> positions = new List<Vector3> { currentPosition };
-
             Branch currentBranch = null;
             List<Branch> branches = new List<Branch>();
 
-            foreach (char command in lSystemString)
+            foreach (char command in config.Axiom)
             {
                 switch (command)
                 {
                     case 'F':
                         Vector3 direction = Vector3.up;
+                        Vector3 nextPosition = currentPosition + currentRotation * direction * currentLength;
 
-                        // Calculate the next position based on the current rotation and direction
-                        Vector3 nextPosition = currentPosition + currentRotation * direction * length;
-
-                        // Check if a node already exists at the next position
                         if (!NodeExistsAtPosition(nextPosition))
                         {
-                            positions.Add(nextPosition); // Add if no node exists
+                            positions.Add(nextPosition);
                         }
 
                         if (positions.Count == 2)
                         {
-                            // Instantiate the line renderer as a child of the current parent
                             currentLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
+                            if (currentLineRendererObject == null) break; // Ensure object was instantiated
+
                             currentLineRenderer = currentLineRendererObject.GetComponent<LineRenderer>();
-
-                            currentLineRenderer.useWorldSpace = false; // Ensure it works in local space
-
-                            // Set the positions for this LineRenderer (these positions are in world space)
+                            currentLineRenderer.useWorldSpace = false;
                             currentLineRenderer.positionCount = 2;
-                            currentLineRenderer.SetPosition(0, positions[0]);  // World space position
-                            currentLineRenderer.SetPosition(1, positions[1]);  // World space position
+                            currentLineRenderer.SetPosition(0, positions[0]);
+                            currentLineRenderer.SetPosition(1, positions[1]);
 
-                            // Set the thickness of the branch
                             currentLineRenderer.startWidth = currentThickness;
                             currentLineRenderer.endWidth = currentThickness;
 
                             lineRenderers.Add(currentLineRendererObject);
 
-                            // Instantiate the node prefab as a child of the LineRenderer object
                             GameObject nodeInstance = Instantiate(nodePrefab, currentLineRendererObject.transform);
-
-                            // Correct the node position relative to the LineRenderer
                             nodeInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[0]);
-                            nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0); // Adjust Y position
-
+                            nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
                             pruningNodes.Add(nodeInstance);
 
-                            // Initialize the node behavior (if any)
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
                             if (nodeBehaviour != null)
                             {
                                 nodeBehaviour.Initialize(currentBranch);
                             }
 
-                            // Create a new branch and set up its relationships
                             Branch newBranch = new Branch(currentLineRendererObject, null);
-
-                            // Connect the new branch to its parent if applicable
                             if (currentBranch != null && currentBranch.LineRendererObject != null)
                             {
                                 LineRenderer previousLineRenderer = currentBranch.LineRendererObject.GetComponent<LineRenderer>();
@@ -152,14 +139,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                             }
 
                             branches.Add(newBranch);
-
-                            // Set main branch if it hasn't been set yet
-                            if (mainParentBranch == null)
-                            {
-                                mainParentBranch = newBranch;
-                            }
-
-                            // Update currentBranch and currentPosition
+                            if (mainParentBranch == null) mainParentBranch = newBranch;
                             currentBranch = newBranch;
                             currentPosition = nextPosition;
                             positions.Clear();
@@ -167,49 +147,53 @@ namespace ProceduralGraphics.LSystems.Rendering
                         }
                         break;
 
-                    case 'L':  // Case for instantiating leaves
-                               // Instantiate the leaf prefab at the current end of the branch (position[1])
-                        GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
-
-                        // Correct the leaf position relative to the LineRenderer
-                        leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
-
-                        // Apply a small vertical offset (Y-axis) to position the leaf above the branch
-                        leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
-
-                        // Add random rotation for more natural look
-                        leafInstance.transform.localRotation = Quaternion.Euler(
-                            Random.Range(0f, 360f), // Randomize Y-axis (upward) rotation
-                            Random.Range(0f, 360f), // Randomize rotation around X and Y for a natural tilt
-                            Random.Range(0f, 360f)
-                        );
-
-                        // Apply random scale variation for natural leaf sizes
-                        float randomScaleFactor = Random.Range(0.8f, 1.2f); // Leaves will vary in size between 80% and 120%
-                        leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
-
-                        // Optional: Apply a slight random positional offset to avoid uniform placement
-                        leafInstance.transform.localPosition += new Vector3(
-                            Random.Range(-0.05f, 0.05f), // Small offset on X-axis
-                            Random.Range(-0.05f, 0.05f), // Small offset on Y-axis
-                            Random.Range(-0.05f, 0.05f)  // Small offset on Z-axis
-                        );
-
-                        leaves.Add(leafInstance);
+                    case 'V':
+                        currentLength *= config.LengthVariationFactor;
                         break;
 
-                    case 'T':  // New case to adjust branch thickness
-                        float thicknessChangeFactor = Random.Range(0.7f, 1.3f); // Randomize the thickness slightly
-                        currentThickness *= thicknessChangeFactor; // Apply the thickness change to the current branch
-                        Debug.Log($"Branch thickness changed to {currentThickness}");
+                    case 'L':
+                        if (currentLineRendererObject != null) // Ensure currentLineRendererObject still exists
+                        {
+                            GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
+                            if (leafInstance == null) break; // Ensure leaf was instantiated
+
+                            leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
+                            leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
+
+                            leafInstance.transform.localRotation = Quaternion.Euler(
+                                Random.Range(0f, 360f),
+                                Random.Range(0f, 360f),
+                                Random.Range(0f, 360f)
+                            );
+
+                            float randomScaleFactor = Random.Range(config.LeafScaleMin, config.LeafScaleMax);
+                            leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
+
+                            leafInstance.transform.localPosition += new Vector3(
+                                Random.Range(-config.LeafOffset, config.LeafOffset),
+                                Random.Range(-config.LeafOffset, config.LeafOffset),
+                                Random.Range(-config.LeafOffset, config.LeafOffset)
+                            );
+
+                            leaves.Add(leafInstance);
+                        }
+                        break;
+
+                    case 'T':
+                        currentThickness *= config.ThicknessVariationFactor;
+                        break;
+
+                    case 'B':
+                        float curvatureAngle = Random.Range(config.CurvatureAngleMin, config.CurvatureAngleMax);
+                        currentRotation *= Quaternion.Euler(0, 0, curvatureAngle);
                         break;
 
                     case '+':
-                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(angle) : Deterministic3DAngle(angle));
+                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(config.Angle) : Deterministic3DAngle(config.Angle));
                         break;
 
                     case '-':
-                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(-angle) : Deterministic3DAngle(-angle));
+                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(-config.Angle) : Deterministic3DAngle(-config.Angle));
                         break;
 
                     case '[':
@@ -223,14 +207,13 @@ namespace ProceduralGraphics.LSystems.Rendering
                             currentPosition = state.position;
                             currentRotation = state.rotation;
                             currentBranch = state.branch;
-
                             positions.Clear();
                             positions.Add(currentPosition);
                         }
                         break;
 
                     default:
-                        Debug.LogWarning($"Unknown L-System Command: {command}"); // Handle unknown commands
+                        Debug.LogWarning($"Unknown L-System Command: {command}");
                         break;
                 }
 
@@ -240,8 +223,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             Debug.Log($"Rendered {branches.Count} branches.");
             FocusCameraOnPlant();
         }
-
-
 
 
         public void ClearAllObjects()

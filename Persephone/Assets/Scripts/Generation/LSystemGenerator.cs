@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Text;
 using ProceduralGraphics.LSystems.Rendering;
+using ProceduralGraphics.LSystems.ScriptableObjects;
 
 namespace ProceduralGraphics.LSystems.Generation
 {
@@ -33,7 +34,31 @@ namespace ProceduralGraphics.LSystems.Generation
 
             Debug.Log($"Generated L-System String: {currentString}");
 
-            renderer.Render(currentString, Length, Angle);
+            renderer.Render(new LSystemConfig
+            {
+                Name = "GeneratedConfig",
+                Axiom = currentString,
+                Rules = Rules,
+                Angle = Angle,
+                Length = Length,
+                Thickness = 0.1f,  // Default thickness; adjust as needed
+
+                LengthVariationFactor = 1.0f,  // Default length variation factor; adjust as needed
+                ThicknessVariationFactor = 1.0f,  // Default thickness variation factor; adjust as needed
+
+                CurvatureAngleMin = 5f,  // Minimum curvature angle; adjust as needed
+                CurvatureAngleMax = 15f,  // Maximum curvature angle; adjust as needed
+                CurvatureAngle = 10f,  // General curvature angle; adjust as needed
+
+                LeafScaleMin = 0.8f,  // Minimum leaf scale; adjust as needed
+                LeafScaleMax = 1.2f,  // Maximum leaf scale; adjust as needed
+                LeafOffset = 0.05f,  // Leaf offset; adjust as needed
+                LeafPlacementProbability = 1.0f,  // Probability of placing a leaf; adjust as needed
+
+                DefaultIterations = Iterations,
+                IsStochastic = false  // Set to true if you want stochastic behavior
+            });
+
         }
 
         private string ApplyRules(string input)
@@ -99,7 +124,31 @@ namespace ProceduralGraphics.LSystems.Generation
 
             if (renderer != null)
             {
-                renderer.Render(currentString, Length, Angle);
+                renderer.Render(new LSystemConfig
+                {
+                    Name = "GeneratedConfig",
+                    Axiom = currentString,
+                    Rules = Rules,
+                    Angle = Angle,
+                    Length = Length,
+                    Thickness = 0.1f,  // Default thickness; adjust as needed
+
+                    LengthVariationFactor = 1.0f,  // Default length variation factor; adjust as needed
+                    ThicknessVariationFactor = 1.0f,  // Default thickness variation factor; adjust as needed
+
+                    CurvatureAngleMin = 5f,  // Minimum curvature angle; adjust as needed
+                    CurvatureAngleMax = 15f,  // Maximum curvature angle; adjust as needed
+                    CurvatureAngle = 10f,  // General curvature angle; adjust as needed
+
+                    LeafScaleMin = 0.8f,  // Minimum leaf scale; adjust as needed
+                    LeafScaleMax = 1.2f,  // Maximum leaf scale; adjust as needed
+                    LeafOffset = 0.05f,  // Leaf offset; adjust as needed
+                    LeafPlacementProbability = 1.0f,  // Probability of placing a leaf; adjust as needed
+
+                    DefaultIterations = Iterations,
+                    IsStochastic = false  // Set to true if you want stochastic behavior
+                });
+
                 Debug.Log("New branches generated successfully.");
             }
             else

@@ -13,21 +13,21 @@ MonoBehaviour:
   m_Name: FernConfig
   m_EditorClassIdentifier: 
   Name: Fern (Pteridium aquilinum)
-  Axiom: X
+  Axiom: F
   Rules:
-  - Predecessor: 88
-    Successor: F+[-F+T+LF]+[+FL]
   - Predecessor: 70
-    Successor: FF
-  - Predecessor: 84
-    Successor: T
-  - Predecessor: 76
-    Successor: L
-  Angle: 45
-  Length: 0.8
-  DefaultIterations: 3
-  Rules3D:
-  - Predecessor: 70
-    Successor: F[+F]F[-F]
-  - Predecessor: 88
-    Successor: F[-X][+X]
+    Successor: FF-[-L+T-FV]+[+FLB]-F
+  Angle: 30
+  Length: 1.1
+  Thickness: 0.05
+  LengthVariationFactor: 1.2
+  ThicknessVariationFactor: 0.9
+  CurvatureAngleMin: 15
+  CurvatureAngleMax: 25
+  CurvatureAngle: 20
+  LeafScaleMin: 0.5
+  LeafScaleMax: 0.8
+  LeafOffset: 0.03
+  LeafPlacementProbability: 0.9
+  DefaultIterations: 4
+  IsStochastic: 1

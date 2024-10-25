@@ -10,24 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
-  m_Name: OakTreeConfig
+  m_Name: GrapeVineTreeConfig
   m_EditorClassIdentifier: 
-  Name: Oak Tree (Quercus robur)
+  Name: Grape Vine (Vitis vinifera)
   Axiom: F
   Rules:
   - Predecessor: 70
-    Successor: F[+FL]F[-FL]FB[+T]
-  Angle: 30
-  Length: 1.4
-  Thickness: 0.18
-  LengthVariationFactor: 1.2
-  ThicknessVariationFactor: 0.8
-  CurvatureAngleMin: 3
-  CurvatureAngleMax: 7
-  CurvatureAngle: 5
+    Successor: F[+LF][+F-T][V]-[+LB]
+  Angle: 35
+  Length: 1
+  Thickness: 0.08
+  LengthVariationFactor: 1.05
+  ThicknessVariationFactor: 0.95
+  CurvatureAngleMin: 10
+  CurvatureAngleMax: 20
+  CurvatureAngle: 15
   LeafScaleMin: 0.5
-  LeafScaleMax: 1
-  LeafOffset: 0.03
+  LeafScaleMax: 0.8
+  LeafOffset: 0.04
   LeafPlacementProbability: 1
   DefaultIterations: 4
   IsStochastic: 1

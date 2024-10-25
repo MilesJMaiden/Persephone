@@ -47,9 +47,21 @@ namespace ProceduralGraphics.LSystems.UI
         [SerializeField]
         private Slider rotationSlider;
 
-        [SerializeField] // New Leaf Variant Dropdown
+        [SerializeField]
         private TMP_Dropdown leafVariantDropdown;
 
+        // New UI controls for custom parameters
+        [SerializeField]
+        private TMP_InputField lengthVariationInput;
+
+        [SerializeField]
+        private TMP_InputField thicknessVariationInput;
+
+        [SerializeField]
+        private TMP_InputField curvatureAngleInput;
+
+        [SerializeField]
+        private TMP_InputField leafPlacementProbabilityInput;
 
         [Header("L-System Configurations")]
         [SerializeField]
@@ -61,12 +73,12 @@ namespace ProceduralGraphics.LSystems.UI
         public event Action<LSystemConfig> OnGenerateRequested;
         public event Action<bool> OnRenderToggle;
         public event Action<bool> OnUseMeshToggleChanged;
-        public event Action<int> OnLeafVariantSelected; // Event for Leaf Variant Selection
+        public event Action<int> OnLeafVariantSelected;
 
         private void Start()
         {
             InitializeDropdown();
-            InitializeLeafVariantDropdown(); // Initialize leaf dropdown
+            InitializeLeafVariantDropdown();
             InitializeRotationSlider();
 
             iterationSlider.onValueChanged.AddListener(OnIterationSliderChanged);
@@ -79,7 +91,12 @@ namespace ProceduralGraphics.LSystems.UI
 
             stochasticToggle.onValueChanged.AddListener(OnStochasticToggleChanged);
             rotationSlider.onValueChanged.AddListener(OnRotationSliderChanged);
-            leafVariantDropdown.onValueChanged.AddListener(OnLeafVariantDropdownChanged); // Listener for leaf variant dropdown
+            leafVariantDropdown.onValueChanged.AddListener(OnLeafVariantDropdownChanged);
+
+            lengthVariationInput.onEndEdit.AddListener(OnLengthVariationChanged);
+            thicknessVariationInput.onEndEdit.AddListener(OnThicknessVariationChanged);
+            curvatureAngleInput.onEndEdit.AddListener(OnCurvatureAngleChanged);
+            leafPlacementProbabilityInput.onEndEdit.AddListener(OnLeafPlacementProbabilityChanged);
         }
 
         private void InitializeDropdown()
@@ -98,22 +115,17 @@ namespace ProceduralGraphics.LSystems.UI
         {
             leafVariantDropdown.ClearOptions();
 
-            // Fetch the leafVariants array from the LSystemRenderer
             var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
-
             if (lSystemRenderer != null && lSystemRenderer.leafVariants.Length > 0)
             {
                 var leafOptions = new List<string>();
-
-                // Add each prefab name to the dropdown options
                 foreach (var leafVariant in lSystemRenderer.leafVariants)
                 {
                     if (leafVariant != null)
                     {
-                        leafOptions.Add(leafVariant.name); // Use the prefab's name property
+                        leafOptions.Add(leafVariant.name);
                     }
                 }
-
                 leafVariantDropdown.AddOptions(leafOptions);
             }
             else
@@ -122,67 +134,13 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
-
-        private void OnLeafVariantDropdownChanged(int index) // Event for leaf variant change
+        private void InitializeRotationSlider()
         {
-            OnLeafVariantSelected?.Invoke(index); // Invoke the event with the selected index
-        }
-
-        private void OnAllNodesToggleChanged(bool isOn)
-        {
-            // Directly call a method in the LSystemRenderer to manage node visibility
             var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
             if (lSystemRenderer != null)
             {
-                lSystemRenderer.SetAllNodesActive(isOn);
+                rotationSlider.value = lSystemRenderer.transform.rotation.eulerAngles.y;
             }
-        }
-
-        private void OnVariantDropdownChanged(int index)
-        {
-            // Temporarily disable InputSystemUIInputModule to prevent processing destroyed object events
-            var inputModule = EventSystem.current.GetComponent<InputSystemUIInputModule>();
-            if (inputModule != null)
-            {
-                inputModule.enabled = false;
-            }
-
-            if (variantDropdown != null && index >= 0 && index < lSystemConfigs.Length)
-            {
-                variantDropdown.Hide();
-                UpdateUIWithConfig(lSystemConfigs[index]);
-            }
-
-            if (inputModule != null)
-            {
-                StartCoroutine(ReenableInputModule(inputModule));
-            }
-        }
-
-        private void OnStochasticToggleChanged(bool isOn)
-        {
-            // Assuming the LSystemRenderer is responsible for rendering
-            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
-            if (lSystemRenderer != null)
-            {
-                lSystemRenderer.SetStochasticMode(isOn);  // Example setter to update the mode
-            }
-        }
-
-        private IEnumerator ReenableInputModule(InputSystemUIInputModule inputModule)
-        {
-            yield return new WaitForEndOfFrame();
-            inputModule.enabled = true;
-        }
-
-        private void UpdateUIWithConfig(LSystemConfig config)
-        {
-            if (config == null) return;
-
-            iterationSlider.value = config.DefaultIterations;
-            iterationLabel.text = $"Iterations: {config.DefaultIterations}";
-            angleInput.text = config.Angle.ToString();
-            lengthInput.text = config.Length.ToString();
         }
 
         private void OnIterationSliderChanged(float value)
@@ -209,48 +167,32 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
-        private void OnGenerateButtonClicked()
+        private void HandleUseMeshToggleChanged(bool isMeshOn)
         {
-            int selectedIndex = variantDropdown.value;
-            if (selectedIndex >= 0 && selectedIndex < lSystemConfigs.Length)
+            Debug.Log($"Use Mesh Renderer Toggle Changed: {isMeshOn}");
+            OnUseMeshToggleChanged?.Invoke(isMeshOn);
+        }
+
+        private void OnRenderToggleChanged(bool isOn)
+        {
+            OnRenderToggle?.Invoke(isOn);
+        }
+
+        private void OnAllNodesToggleChanged(bool isOn)
+        {
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
             {
-                LSystemConfig config = lSystemConfigs[selectedIndex];
-
-                // Validate and parse angle input
-                if (!float.TryParse(angleInput.text, out float parsedAngle))
-                {
-                    Debug.LogWarning("Invalid angle input. Using default value of 25.");
-                    parsedAngle = 25f; // Default
-                    angleInput.text = parsedAngle.ToString();
-                }
-
-                // Validate and parse length input
-                if (!float.TryParse(lengthInput.text, out float parsedLength))
-                {
-                    Debug.LogWarning("Invalid length input. Using default value of 1.");
-                    parsedLength = 1f; // Default value
-                    lengthInput.text = parsedLength.ToString();
-                }
-
-                // Set the parsed values to the config
-                config.DefaultIterations = Mathf.RoundToInt(iterationSlider.value);
-                config.Angle = parsedAngle;
-                config.Length = parsedLength;
-
-                rotationSlider.value = 0;
-
-                OnGenerateRequested?.Invoke(config);
-
-                // Update the render call to include random offset
-                var renderer = FindObjectOfType<LSystemRenderer>();
-                if (renderer != null)
-                {
-                    renderer.Render(config.Axiom, parsedLength, parsedAngle);
-                }
+                lSystemRenderer.SetAllNodesActive(isOn);
             }
-            else
+        }
+
+        private void OnStochasticToggleChanged(bool isOn)
+        {
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
             {
-                Debug.LogError("LSystemUIController: Selected config index is out of range.");
+                lSystemRenderer.SetStochasticMode(isOn);
             }
         }
 
@@ -263,24 +205,160 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
-        private void InitializeRotationSlider()
+        private void OnLeafVariantDropdownChanged(int index)
         {
-            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
-            if (lSystemRenderer != null)
+            OnLeafVariantSelected?.Invoke(index);
+        }
+
+        private void OnVariantDropdownChanged(int index)
+        {
+            var inputModule = EventSystem.current.GetComponent<InputSystemUIInputModule>();
+            if (inputModule != null)
             {
-                rotationSlider.value = lSystemRenderer.transform.rotation.eulerAngles.y;
+                inputModule.enabled = false;
+            }
+
+            if (variantDropdown != null && index >= 0 && index < lSystemConfigs.Length)
+            {
+                variantDropdown.Hide();
+                UpdateUIWithConfig(lSystemConfigs[index]);
+            }
+
+            if (inputModule != null)
+            {
+                StartCoroutine(ReenableInputModule(inputModule));
             }
         }
 
-        private void HandleUseMeshToggleChanged(bool isMeshOn)
+        private IEnumerator ReenableInputModule(InputSystemUIInputModule inputModule)
         {
-            Debug.Log($"Use Mesh Renderer Toggle Changed: {isMeshOn}");
-            OnUseMeshToggleChanged?.Invoke(isMeshOn);
+            yield return new WaitForEndOfFrame();
+            inputModule.enabled = true;
         }
 
-        private void OnRenderToggleChanged(bool isOn)
+        private void UpdateUIWithConfig(LSystemConfig config)
         {
-            OnRenderToggle?.Invoke(isOn);
+            if (config == null) return;
+
+            iterationSlider.value = config.DefaultIterations;
+            iterationLabel.text = $"Iterations: {config.DefaultIterations}";
+            angleInput.text = config.Angle.ToString();
+            lengthInput.text = config.Length.ToString();
+
+            lengthVariationInput.text = config.LengthVariationFactor.ToString();
+            thicknessVariationInput.text = config.ThicknessVariationFactor.ToString();
+            curvatureAngleInput.text = config.CurvatureAngle.ToString();
+            leafPlacementProbabilityInput.text = config.LeafPlacementProbability.ToString();
+        }
+
+        private void OnLengthVariationChanged(string value)
+        {
+            if (!float.TryParse(value, out float variation))
+            {
+                Debug.LogWarning("Invalid length variation input.");
+                return;
+            }
+            lSystemConfigs[variantDropdown.value].LengthVariationFactor = variation;
+        }
+
+        private void OnThicknessVariationChanged(string value)
+        {
+            if (!float.TryParse(value, out float thickness))
+            {
+                Debug.LogWarning("Invalid thickness variation input.");
+                return;
+            }
+            lSystemConfigs[variantDropdown.value].ThicknessVariationFactor = thickness;
+        }
+
+        private void OnCurvatureAngleChanged(string value)
+        {
+            if (!float.TryParse(value, out float angle))
+            {
+                Debug.LogWarning("Invalid curvature angle input.");
+                return;
+            }
+            lSystemConfigs[variantDropdown.value].CurvatureAngle = angle;
+        }
+
+        private void OnLeafPlacementProbabilityChanged(string value)
+        {
+            if (!float.TryParse(value, out float probability))
+            {
+                Debug.LogWarning("Invalid leaf placement probability input.");
+                return;
+            }
+            lSystemConfigs[variantDropdown.value].LeafPlacementProbability = Mathf.Clamp01(probability);
+        }
+
+        private void OnGenerateButtonClicked()
+        {
+            int selectedIndex = variantDropdown.value;
+            if (selectedIndex >= 0 && selectedIndex < lSystemConfigs.Length)
+            {
+                LSystemConfig config = lSystemConfigs[selectedIndex];
+
+                // Validate and parse angle input
+                if (!float.TryParse(angleInput.text, out float parsedAngle))
+                {
+                    Debug.LogWarning("Invalid angle input. Using default value of 25.");
+                    parsedAngle = 25f;
+                    angleInput.text = parsedAngle.ToString();
+                }
+
+                // Validate and parse length input
+                if (!float.TryParse(lengthInput.text, out float parsedLength))
+                {
+                    Debug.LogWarning("Invalid length input. Using default value of 1.");
+                    parsedLength = 1f;
+                    lengthInput.text = parsedLength.ToString();
+                }
+
+                // Set the parsed values to the config
+                config.DefaultIterations = Mathf.RoundToInt(iterationSlider.value);
+                config.Angle = parsedAngle;
+                config.Length = parsedLength;
+
+                // Set values for the custom parameters
+                if (!float.TryParse(lengthVariationInput.text, out float lengthVariation))
+                {
+                    lengthVariation = 0.2f; // Default value
+                }
+                config.LengthVariationFactor = lengthVariation;
+
+                if (!float.TryParse(thicknessVariationInput.text, out float thicknessVariation))
+                {
+                    thicknessVariation = 0.3f; // Default value
+                }
+                config.ThicknessVariationFactor = thicknessVariation;
+
+                if (!float.TryParse(curvatureAngleInput.text, out float curvatureAngle))
+                {
+                    curvatureAngle = 10f; // Default value
+                }
+                config.CurvatureAngle = curvatureAngle;
+
+                if (!float.TryParse(leafPlacementProbabilityInput.text, out float leafProbability))
+                {
+                    leafProbability = 1f; // Default value
+                }
+                config.LeafPlacementProbability = Mathf.Clamp01(leafProbability);
+
+                rotationSlider.value = 0;
+
+                OnGenerateRequested?.Invoke(config);
+
+                // Update the render call to include random offset
+                var renderer = FindObjectOfType<LSystemRenderer>();
+                if (renderer != null)
+                {
+                    renderer.Render(config);
+                }
+            }
+            else
+            {
+                Debug.LogError("LSystemUIController: Selected config index is out of range.");
+            }
         }
 
         public void RegeneratePlant()
@@ -298,9 +376,14 @@ namespace ProceduralGraphics.LSystems.UI
             useMeshToggle.onValueChanged.RemoveListener(HandleUseMeshToggleChanged);
             allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged);
             stochasticToggle.onValueChanged.RemoveListener(OnStochasticToggleChanged);
-            leafVariantDropdown.onValueChanged.RemoveListener(OnLeafVariantDropdownChanged); // Remove listener for leaf variant dropdown
+            leafVariantDropdown.onValueChanged.RemoveListener(OnLeafVariantDropdownChanged);
 
             rotationSlider.onValueChanged.RemoveListener(OnRotationSliderChanged);
+
+            lengthVariationInput.onEndEdit.RemoveListener(OnLengthVariationChanged);
+            thicknessVariationInput.onEndEdit.RemoveListener(OnThicknessVariationChanged);
+            curvatureAngleInput.onEndEdit.RemoveListener(OnCurvatureAngleChanged);
+            leafPlacementProbabilityInput.onEndEdit.RemoveListener(OnLeafPlacementProbabilityChanged);
         }
     }
 }

@@ -16,16 +16,18 @@ MonoBehaviour:
   Axiom: F
   Rules:
   - Predecessor: 70
-    Successor: "F[+F][\u2212F]F"
-  - Predecessor: 84
-    Successor: T
-  - Predecessor: 76
-    Successor: L
-  Angle: 15
-  Length: 1.8
+    Successor: F[-LFV][+LF]-F[+T]
+  Angle: 40
+  Length: 2
+  Thickness: 0.12
+  LengthVariationFactor: 0.95
+  ThicknessVariationFactor: 1
+  CurvatureAngleMin: 0
+  CurvatureAngleMax: 3
+  CurvatureAngle: 2
+  LeafScaleMin: 0.6
+  LeafScaleMax: 1.2
+  LeafOffset: 0.05
+  LeafPlacementProbability: 0.9
   DefaultIterations: 4
-  Rules3D:
-  - Predecessor: 70
-    Successor: F[+F]F[-F][F]
-  - Predecessor: 88
-    Successor: F[+X]
+  IsStochastic: 0
