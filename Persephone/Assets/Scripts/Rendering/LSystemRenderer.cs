@@ -68,7 +68,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             StartCoroutine(RenderLSystemCoroutine(config));
         }
 
-
         private IEnumerator RenderLSystemCoroutine(LSystemConfig config)
         {
             ClearAllObjects();  // Clear previous objects before rendering
@@ -144,6 +143,9 @@ namespace ProceduralGraphics.LSystems.Rendering
                             currentPosition = nextPosition;
                             positions.Clear();
                             positions.Add(currentPosition);
+
+                            // Adjust camera position dynamically after each branch
+                            FocusCameraOnPlant();
                         }
                         break;
 
@@ -221,8 +223,8 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
 
             Debug.Log($"Rendered {branches.Count} branches.");
-            FocusCameraOnPlant();
         }
+
 
 
         public void ClearAllObjects()
