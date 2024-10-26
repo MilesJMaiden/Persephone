@@ -30,6 +30,7 @@ namespace ProceduralGraphics.LSystems.Rendering
 
         private bool isStochastic = false;
         private int selectedLeafVariantIndex = 0; // Track the selected leaf variant
+        private Queue<GameObject> branchPool = new Queue<GameObject>(); // Pool for reusing branches
 
         private void Start()
         {
@@ -87,6 +88,8 @@ namespace ProceduralGraphics.LSystems.Rendering
             Branch currentBranch = null;
             List<Branch> branches = new List<Branch>();
 
+            int branchCount = 0;
+
             foreach (char command in config.Axiom)
             {
                 switch (command)
@@ -102,10 +105,10 @@ namespace ProceduralGraphics.LSystems.Rendering
 
                         if (positions.Count == 2)
                         {
-                            currentLineRendererObject = Instantiate(lineRendererPrefab, currentParent.transform);
-                            if (currentLineRendererObject == null) break; // Ensure object was instantiated
-
+                            currentLineRendererObject = GetOrCreateLineRenderer();
+                            currentLineRendererObject.transform.SetParent(currentParent.transform);
                             currentLineRenderer = currentLineRendererObject.GetComponent<LineRenderer>();
+
                             currentLineRenderer.useWorldSpace = false;
                             currentLineRenderer.positionCount = 2;
                             currentLineRenderer.SetPosition(0, positions[0]);
@@ -118,7 +121,7 @@ namespace ProceduralGraphics.LSystems.Rendering
 
                             GameObject nodeInstance = Instantiate(nodePrefab, currentLineRendererObject.transform);
                             nodeInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[0]);
-                            nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
+                            //nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
                             pruningNodes.Add(nodeInstance);
 
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
@@ -144,8 +147,9 @@ namespace ProceduralGraphics.LSystems.Rendering
                             positions.Clear();
                             positions.Add(currentPosition);
 
-                            // Adjust camera position dynamically after each branch
-                            FocusCameraOnPlant();
+                            // Adjust camera position periodically (every 10 branches or end of iteration)
+                            branchCount++;
+                            if (branchCount % 10 == 0) FocusCameraOnPlant();
                         }
                         break;
 
@@ -154,31 +158,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
 
                     case 'L':
-                        if (currentLineRendererObject != null) // Ensure currentLineRendererObject still exists
-                        {
-                            GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
-                            if (leafInstance == null) break; // Ensure leaf was instantiated
-
-                            leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
-                            leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
-
-                            leafInstance.transform.localRotation = Quaternion.Euler(
-                                Random.Range(0f, 360f),
-                                Random.Range(0f, 360f),
-                                Random.Range(0f, 360f)
-                            );
-
-                            float randomScaleFactor = Random.Range(config.LeafScaleMin, config.LeafScaleMax);
-                            leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
-
-                            leafInstance.transform.localPosition += new Vector3(
-                                Random.Range(-config.LeafOffset, config.LeafOffset),
-                                Random.Range(-config.LeafOffset, config.LeafOffset),
-                                Random.Range(-config.LeafOffset, config.LeafOffset)
-                            );
-
-                            leaves.Add(leafInstance);
-                        }
+                        CreateLeaf(currentPosition, currentLineRendererObject, config);
                         break;
 
                     case 'T':
@@ -223,6 +203,48 @@ namespace ProceduralGraphics.LSystems.Rendering
             }
 
             Debug.Log($"Rendered {branches.Count} branches.");
+            FocusCameraOnPlant(); // Final focus adjustment
+        }
+
+        private GameObject GetOrCreateLineRenderer()
+        {
+            // Check the pool first for available branches
+            if (branchPool.Count > 0)
+            {
+                var pooledLineRenderer = branchPool.Dequeue();
+                pooledLineRenderer.SetActive(true);
+                return pooledLineRenderer;
+            }
+            // If no pooled object is available, instantiate a new one
+            return Instantiate(lineRendererPrefab);
+        }
+
+        private void CreateLeaf(Vector3 currentPosition, GameObject currentLineRendererObject, LSystemConfig config)
+        {
+            if (currentLineRendererObject != null) // Ensure currentLineRendererObject still exists
+            {
+                GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
+
+                leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
+                //leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
+
+                leafInstance.transform.localRotation = Quaternion.Euler(
+                    Random.Range(0f, 360f),
+                    Random.Range(0f, 360f),
+                    Random.Range(0f, 360f)
+                );
+
+                float randomScaleFactor = Random.Range(config.LeafScaleMin, config.LeafScaleMax);
+                leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
+
+                leafInstance.transform.localPosition += new Vector3(
+                    Random.Range(-config.LeafOffset, config.LeafOffset),
+                    Random.Range(-config.LeafOffset, config.LeafOffset),
+                    Random.Range(-config.LeafOffset, config.LeafOffset)
+                );
+
+                leaves.Add(leafInstance);
+            }
         }
 
 
