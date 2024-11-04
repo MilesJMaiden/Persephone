@@ -97,6 +97,9 @@ namespace ProceduralGraphics.LSystems.UI
             thicknessVariationInput.onEndEdit.AddListener(OnThicknessVariationChanged);
             curvatureAngleInput.onEndEdit.AddListener(OnCurvatureAngleChanged);
             leafPlacementProbabilityInput.onEndEdit.AddListener(OnLeafPlacementProbabilityChanged);
+
+            // Disable the rotation slider initially
+            rotationSlider.interactable = false;
         }
 
         private void InitializeDropdown()
@@ -141,6 +144,15 @@ namespace ProceduralGraphics.LSystems.UI
             {
                 rotationSlider.value = lSystemRenderer.transform.rotation.eulerAngles.y;
             }
+        }
+
+        private IEnumerator EnableRotationSliderAfterGeneration(LSystemRenderer renderer)
+        {
+            // Wait until the renderer is done with its coroutine
+            yield return new WaitUntil(() => renderer.IsRenderingComplete);
+
+            // Enable the rotation slider
+            rotationSlider.interactable = true;
         }
 
         private void OnIterationSliderChanged(float value)
@@ -199,11 +211,16 @@ namespace ProceduralGraphics.LSystems.UI
         private void OnRotationSliderChanged(float value)
         {
             var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
-            if (lSystemRenderer != null)
+            if (lSystemRenderer != null && lSystemRenderer.IsRenderingComplete) // Check rendering status
             {
                 lSystemRenderer.RotateRenderer(value);
             }
+            else
+            {
+                rotationSlider.value = 0; // Reset slider if rendering is not complete
+            }
         }
+
 
         private void OnLeafVariantDropdownChanged(int index)
         {
@@ -293,7 +310,14 @@ namespace ProceduralGraphics.LSystems.UI
 
         private void OnGenerateButtonClicked()
         {
+            // Disable the generate button at the start of generation
+            generateButton.interactable = false; // Disable the button
+
+            // Disable the rotation slider at the start of generation
+            rotationSlider.interactable = false;
+
             int selectedIndex = variantDropdown.value;
+
             if (selectedIndex >= 0 && selectedIndex < lSystemConfigs.Length)
             {
                 LSystemConfig config = lSystemConfigs[selectedIndex];
@@ -348,10 +372,11 @@ namespace ProceduralGraphics.LSystems.UI
 
                 OnGenerateRequested?.Invoke(config);
 
-                // Update the render call to include random offset
+                // Find the renderer and subscribe to OnRenderComplete to re-enable the generate button
                 var renderer = FindObjectOfType<LSystemRenderer>();
                 if (renderer != null)
                 {
+                    renderer.OnRenderComplete += EnableGenerateButton;
                     renderer.Render(config);
                 }
             }
@@ -360,6 +385,31 @@ namespace ProceduralGraphics.LSystems.UI
                 Debug.LogError("LSystemUIController: Selected config index is out of range.");
             }
         }
+
+        // Method to re-enable the generate button when rendering is complete
+        private void EnableGenerateButton()
+        {
+            generateButton.interactable = true; // Re-enable the button after rendering completes
+            var renderer = FindObjectOfType<LSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.OnRenderComplete -= EnableGenerateButton; // Unsubscribe to avoid multiple triggers
+            }
+        }
+
+
+
+
+        private void EnableRotationSlider()
+        {
+            rotationSlider.interactable = true; // Enable the slider after rendering completes
+            var renderer = FindObjectOfType<LSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.OnRenderComplete -= EnableRotationSlider; // Unsubscribe to avoid multiple triggers
+            }
+        }
+
 
         public void RegeneratePlant()
         {

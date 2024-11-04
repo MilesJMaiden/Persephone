@@ -9,6 +9,9 @@ namespace ProceduralGraphics.LSystems.Rendering
     [RequireComponent(typeof(LineRenderer))]
     public class LSystemRenderer : RendererBase
     {
+        public event System.Action OnRenderComplete;
+        private bool isGenerating = false;
+
         [SerializeField]
         private GameObject lineRendererPrefab;
 
@@ -31,6 +34,8 @@ namespace ProceduralGraphics.LSystems.Rendering
         private bool isStochastic = false;
         private int selectedLeafVariantIndex = 0; // Track the selected leaf variant
         private Queue<GameObject> branchPool = new Queue<GameObject>(); // Pool for reusing branches
+
+        public bool IsRenderingComplete { get; private set; }
 
         private void Start()
         {
@@ -60,18 +65,27 @@ namespace ProceduralGraphics.LSystems.Rendering
 
         public override void Render(LSystemConfig config)
         {
+            if (isGenerating)
+            {
+                Debug.LogWarning("Render already in progress. Ignoring duplicate call.");
+                return;
+            }
             if (lineRendererPrefab == null || nodePrefab == null || leafVariants.Length == 0 || lineRenderParent == null)
             {
                 Debug.LogError("LSystemRenderer: Prefab or Parent not assigned.");
                 return;
             }
 
+            Debug.Log("Starting L-System generation...");
+            isGenerating = true;  // Set flag to true to indicate generation in progress
             StartCoroutine(RenderLSystemCoroutine(config));
         }
 
         private IEnumerator RenderLSystemCoroutine(LSystemConfig config)
         {
             ClearAllObjects();  // Clear previous objects before rendering
+            IsRenderingComplete = false;
+            Debug.Log("LSystem generation coroutine started.");  // Log at start
 
             Stack<BranchState> stack = new Stack<BranchState>();
             Vector3 currentPosition = Vector3.zero;
@@ -92,6 +106,7 @@ namespace ProceduralGraphics.LSystems.Rendering
 
             foreach (char command in config.Axiom)
             {
+                // Process each command in the L-System axiom
                 switch (command)
                 {
                     case 'F':
@@ -121,7 +136,6 @@ namespace ProceduralGraphics.LSystems.Rendering
 
                             GameObject nodeInstance = Instantiate(nodePrefab, currentLineRendererObject.transform);
                             nodeInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(positions[0]);
-                            //nodeInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
                             pruningNodes.Add(nodeInstance);
 
                             NodeBehaviour nodeBehaviour = nodeInstance.GetComponent<NodeBehaviour>();
@@ -147,7 +161,6 @@ namespace ProceduralGraphics.LSystems.Rendering
                             positions.Clear();
                             positions.Add(currentPosition);
 
-                            // Adjust camera position periodically (every 10 branches or end of iteration)
                             branchCount++;
                             if (branchCount % 10 == 0) FocusCameraOnPlant();
                         }
@@ -166,7 +179,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
 
                     case 'B':
-                        float curvatureAngle = Random.Range(config.CurvatureAngleMin, config.CurvatureAngleMax);
+                        float curvatureAngle = UnityEngine.Random.Range(config.CurvatureAngleMin, config.CurvatureAngleMax);
                         currentRotation *= Quaternion.Euler(0, 0, curvatureAngle);
                         break;
 
@@ -199,12 +212,24 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
                 }
 
-                yield return null;
+                yield return null;  // Yield per iteration to avoid blocking
             }
 
-            Debug.Log($"Rendered {branches.Count} branches.");
+            Debug.Log("All branches generated. Completing L-System generation.");
             FocusCameraOnPlant(); // Final focus adjustment
+
+            // Ensure rendering complete is set after full coroutine finishes
+            IsRenderingComplete = true;
+            Debug.Log("LSystem generation has been completed.");  // Log completion
+
+            // Signal that rendering is complete
+            OnRenderComplete?.Invoke();
+
+            // Reset the generation flag to allow new generations
+            isGenerating = false;  // Reset the flag here to allow for future calls
         }
+
+
 
         private GameObject GetOrCreateLineRenderer()
         {
@@ -246,8 +271,6 @@ namespace ProceduralGraphics.LSystems.Rendering
                 leaves.Add(leafInstance);
             }
         }
-
-
 
         public void ClearAllObjects()
         {
