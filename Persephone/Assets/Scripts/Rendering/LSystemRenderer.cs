@@ -85,6 +85,7 @@ namespace ProceduralGraphics.LSystems.Rendering
         {
             ClearAllObjects();  // Clear previous objects before rendering
             IsRenderingComplete = false;
+            isGenerating = true;
             Debug.Log("LSystem generation coroutine started.");  // Log at start
 
             Stack<BranchState> stack = new Stack<BranchState>();

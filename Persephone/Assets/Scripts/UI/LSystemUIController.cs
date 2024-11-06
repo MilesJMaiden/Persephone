@@ -310,10 +310,8 @@ namespace ProceduralGraphics.LSystems.UI
 
         private void OnGenerateButtonClicked()
         {
-            // Disable the generate button at the start of generation
-            generateButton.interactable = false; // Disable the button
-
-            // Disable the rotation slider at the start of generation
+            // Disable the generate button and rotation slider at the start of generation
+            generateButton.interactable = false;
             rotationSlider.interactable = false;
 
             int selectedIndex = variantDropdown.value;
@@ -372,11 +370,11 @@ namespace ProceduralGraphics.LSystems.UI
 
                 OnGenerateRequested?.Invoke(config);
 
-                // Find the renderer and subscribe to OnRenderComplete to re-enable the generate button
+                // Find the renderer and subscribe to OnRenderComplete to re-enable UI
                 var renderer = FindObjectOfType<LSystemRenderer>();
                 if (renderer != null)
                 {
-                    renderer.OnRenderComplete += EnableGenerateButton;
+                    renderer.OnRenderComplete += EnableUIAfterGeneration;
                     renderer.Render(config);
                 }
             }
@@ -385,6 +383,22 @@ namespace ProceduralGraphics.LSystems.UI
                 Debug.LogError("LSystemUIController: Selected config index is out of range.");
             }
         }
+
+        // Method to re-enable both the generate button and rotation slider after rendering completes
+        private void EnableUIAfterGeneration()
+        {
+            generateButton.interactable = true;
+            rotationSlider.interactable = true;
+            Debug.Log("UI elements re-enabled after L-System generation.");
+
+            // Unsubscribe from the OnRenderComplete event to prevent multiple calls
+            var renderer = FindObjectOfType<LSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.OnRenderComplete -= EnableUIAfterGeneration;
+            }
+        }
+
 
         // Method to re-enable the generate button when rendering is complete
         private void EnableGenerateButton()
@@ -396,8 +410,6 @@ namespace ProceduralGraphics.LSystems.UI
                 renderer.OnRenderComplete -= EnableGenerateButton; // Unsubscribe to avoid multiple triggers
             }
         }
-
-
 
 
         private void EnableRotationSlider()
