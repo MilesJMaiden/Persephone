@@ -35,6 +35,11 @@ namespace ProceduralGraphics.LSystems.Rendering
         private int selectedLeafVariantIndex = 0; // Track the selected leaf variant
         private Queue<GameObject> branchPool = new Queue<GameObject>(); // Pool for reusing branches
 
+        [SerializeField]
+        private GameObject flowerPrefab; // Flower prefab to spawn
+
+        private List<GameObject> flowers = new List<GameObject>();
+
         public bool IsRenderingComplete { get; private set; }
 
         private void Start()
@@ -175,6 +180,10 @@ namespace ProceduralGraphics.LSystems.Rendering
                         CreateLeaf(currentPosition, currentLineRendererObject, config);
                         break;
 
+                    case 'X': // New case for flower spawning
+                        CreateFlower(currentPosition, currentLineRendererObject);
+                        break;
+
                     case 'T':
                         currentThickness *= config.ThicknessVariationFactor;
                         break;
@@ -249,29 +258,52 @@ namespace ProceduralGraphics.LSystems.Rendering
         {
             if (currentLineRendererObject != null) // Ensure currentLineRendererObject still exists
             {
-                GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
+                // Apply both LeafPlacementProbability and LeafDensity
+                if (Random.value <= config.LeafPlacementProbability * config.LeafDensity)
+                {
+                    GameObject leafInstance = Instantiate(leafVariants[selectedLeafVariantIndex], currentLineRendererObject.transform);
 
-                leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
-                //leafInstance.transform.localPosition += new Vector3(0, 0.22f, 0);
+                    leafInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
 
-                leafInstance.transform.localRotation = Quaternion.Euler(
+                    leafInstance.transform.localRotation = Quaternion.Euler(
+                        Random.Range(0f, 360f),
+                        Random.Range(0f, 360f),
+                        Random.Range(0f, 360f)
+                    );
+
+                    float randomScaleFactor = Random.Range(config.LeafScaleMin, config.LeafScaleMax);
+                    leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
+
+                    leafInstance.transform.localPosition += new Vector3(
+                        Random.Range(-config.LeafOffset, config.LeafOffset),
+                        Random.Range(-config.LeafOffset, config.LeafOffset),
+                        Random.Range(-config.LeafOffset, config.LeafOffset)
+                    );
+
+                    leaves.Add(leafInstance);
+                }
+            }
+        }
+
+
+        private void CreateFlower(Vector3 currentPosition, GameObject currentLineRendererObject)
+        {
+            if (currentLineRendererObject != null) // Ensure the current branch exists
+            {
+                GameObject flowerInstance = Instantiate(flowerPrefab, currentLineRendererObject.transform);
+                flowerInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
+
+                // Optionally adjust flower rotation and scale
+                flowerInstance.transform.localRotation = Quaternion.Euler(
                     Random.Range(0f, 360f),
                     Random.Range(0f, 360f),
                     Random.Range(0f, 360f)
                 );
 
-                float randomScaleFactor = Random.Range(config.LeafScaleMin, config.LeafScaleMax);
-                leafInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
-
-                leafInstance.transform.localPosition += new Vector3(
-                    Random.Range(-config.LeafOffset, config.LeafOffset),
-                    Random.Range(-config.LeafOffset, config.LeafOffset),
-                    Random.Range(-config.LeafOffset, config.LeafOffset)
-                );
-
-                leaves.Add(leafInstance);
+                flowers.Add(flowerInstance); // Track instantiated flowers
             }
         }
+
 
         public void ClearAllObjects()
         {
@@ -296,12 +328,21 @@ namespace ProceduralGraphics.LSystems.Rendering
                     Destroy(leaf);
                 }
             }
+            foreach (var flower in flowers)
+            {
+                if (flower != null)
+                {
+                    Destroy(flower);
+                }
+            }
             lineRenderers.Clear();
             pruningNodes.Clear();
             leaves.Clear();
+            flowers.Clear();
 
-            Debug.Log("Cleared all line renderers, nodes, and leaves.");
+            Debug.Log("Cleared all line renderers, nodes, leaves, and flowers.");
         }
+
 
         private void RegeneratePlant()
         {

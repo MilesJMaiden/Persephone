@@ -4,35 +4,38 @@ using UnityEngine.InputSystem;
 public class CameraController : MonoBehaviour
 {
     [Header("Camera Controls")]
-    public float panSpeed = 10f;         // Speed of panning when using arrow keys or similar
-    public float zoomSpeed = 5f;         // Speed of zoom when using scroll wheel
-    public float minZoom = 20f;          // Minimum field of view for zoom (closer)
-    public float maxZoom = 60f;          // Maximum field of view for zoom (further away)
+    public float panSpeed = 10f;
+    public float zoomSpeed = 5f;
+    public float minZoom = 20f;
+    public float maxZoom = 60f;
 
     private Camera mainCamera;
     private InputActions inputActions;
-    private Vector3 initialCameraPosition;
+    private Vector2 panDirection;
 
     private void Awake()
     {
         inputActions = new InputActions();
 
         // Bind movement and zoom actions
-        inputActions.Camera.Move.performed += ctx => HandleCameraMovement(ctx.ReadValue<Vector2>());
-        inputActions.Camera.Move.canceled += ctx => HandleCameraMovement(Vector2.zero);
+        inputActions.Camera.Move.performed += ctx => panDirection = ctx.ReadValue<Vector2>();
+        inputActions.Camera.Move.canceled += ctx => panDirection = Vector2.zero;
 
-        // Bind zoom actions based on zoom direction
-        inputActions.Camera.ZoomIn.performed += ctx => HandleCameraZoom(-1); // Zoom in (reduce FOV)
-        inputActions.Camera.ZoomOut.performed += ctx => HandleCameraZoom(1);  // Zoom out (increase FOV)
+        inputActions.Camera.ZoomIn.performed += ctx => HandleCameraZoom(-1); // Zoom in
+        inputActions.Camera.ZoomOut.performed += ctx => HandleCameraZoom(1);  // Zoom out
     }
 
     private void Start()
     {
         mainCamera = Camera.main;
-        initialCameraPosition = mainCamera.transform.position;
 
         // Enable camera input actions
         inputActions.Camera.Enable();
+    }
+
+    private void Update()
+    {
+        HandleCameraMovement();
     }
 
     private void OnDisable()
@@ -40,16 +43,17 @@ public class CameraController : MonoBehaviour
         inputActions.Camera.Disable();
     }
 
-    private void HandleCameraMovement(Vector2 movementInput)
+    private void HandleCameraMovement()
     {
-        // Pan camera based on input direction
-        Vector3 moveDirection = new Vector3(movementInput.x, movementInput.y, 0);
-        mainCamera.transform.position += moveDirection * panSpeed * Time.deltaTime;
+        if (panDirection != Vector2.zero)
+        {
+            Vector3 moveDirection = new Vector3(panDirection.x, panDirection.y, 0);
+            mainCamera.transform.position += moveDirection * panSpeed * Time.deltaTime;
+        }
     }
 
     private void HandleCameraZoom(float zoomDirection)
     {
-        // Adjust Field of View directly for zoom effect
         mainCamera.fieldOfView = Mathf.Clamp(
             mainCamera.fieldOfView + zoomDirection * zoomSpeed,
             minZoom,
@@ -59,9 +63,8 @@ public class CameraController : MonoBehaviour
 
     public void ResetCameraPosition()
     {
-        // Resets camera position to initial setup
-        mainCamera.transform.position = initialCameraPosition;
         Debug.Log("Camera position reset.");
+        // Logic for resetting camera position can be implemented here.
     }
 
     private void OnDestroy()

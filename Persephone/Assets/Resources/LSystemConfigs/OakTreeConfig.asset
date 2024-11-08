@@ -17,14 +17,18 @@ MonoBehaviour:
   Rules:
   - Predecessor: 70
     Successor: F[+FL]F[-FL]FB[+T]
-  Angle: 30
+  - Predecessor: 76
+    Successor: L+V
+  - Predecessor: 66
+    Successor: F[+X]
+  Angle: 15
   Length: 1.4
   Thickness: 0.18
   LengthVariationFactor: 1.2
   ThicknessVariationFactor: 0.8
   CurvatureAngleMin: 3
   CurvatureAngleMax: 7
-  CurvatureAngle: 5
+  CurvatureAngle: 45
   LeafScaleMin: 0.5
   LeafScaleMax: 1
   LeafOffset: 0.03

@@ -7350,6 +7350,7 @@ MonoBehaviour:
   leafVariants:
   - {fileID: 7929453738292729047, guid: f7b929468f5755e49ac5e54564a57cb6, type: 3}
   lineRenderParent: {fileID: 1621425081}
+  flowerPrefab: {fileID: 2253750500287314384, guid: 13d9428ca67af3b40a455b25cfdf988d, type: 3}
 --- !u!23 &1621425083
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -9709,6 +9710,54 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ShowMaskGraphic: 0
+--- !u!1 &2055906548
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2055906550}
+  - component: {fileID: 2055906549}
+  m_Layer: 0
+  m_Name: CameraController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2055906549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055906548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee69ed6055487894daff715fdf0280fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  panSpeed: 10
+  zoomSpeed: 5
+  minZoom: 5
+  maxZoom: 50
+--- !u!4 &2055906550
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055906548}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2133010999
 GameObject:
   m_ObjectHideFlags: 0
@@ -9889,3 +9938,4 @@ SceneRoots:
   - {fileID: 1792377578}
   - {fileID: 158937711}
   - {fileID: 876103359}
+  - {fileID: 2055906550}

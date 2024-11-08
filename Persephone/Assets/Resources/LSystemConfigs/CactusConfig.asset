@@ -17,6 +17,10 @@ MonoBehaviour:
   Rules:
   - Predecessor: 70
     Successor: F[+FL][-FL]FV
+  - Predecessor: 76
+    Successor: L+T
+  - Predecessor: 86
+    Successor: F[-X][+X]
   Angle: 20
   Length: 1.2
   Thickness: 0.2

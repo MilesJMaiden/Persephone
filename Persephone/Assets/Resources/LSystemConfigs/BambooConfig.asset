@@ -17,17 +17,21 @@ MonoBehaviour:
   Rules:
   - Predecessor: 70
     Successor: F[+F][-F]F[+T-F][V]
-  Angle: 15
-  Length: 1.8
+  - Predecessor: 84
+    Successor: T+
+  - Predecessor: 86
+    Successor: F[+X]
+  Angle: 25
+  Length: 1
   Thickness: 0.1
-  LengthVariationFactor: 1
-  ThicknessVariationFactor: 0.9
+  LengthVariationFactor: 0.5
+  ThicknessVariationFactor: 0.5
   CurvatureAngleMin: 0
   CurvatureAngleMax: 5
-  CurvatureAngle: 2
+  CurvatureAngle: 10
   LeafScaleMin: 0.5
   LeafScaleMax: 0.6
   LeafOffset: 0.02
-  LeafPlacementProbability: 0.7
-  DefaultIterations: 2
+  LeafPlacementProbability: 1
+  DefaultIterations: 3
   IsStochastic: 0

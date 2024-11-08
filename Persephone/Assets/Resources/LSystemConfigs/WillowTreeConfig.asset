@@ -17,7 +17,11 @@ MonoBehaviour:
   Rules:
   - Predecessor: 70
     Successor: FF-[-F+T+LFV]+[+FLB]-FL
-  Angle: 22
+  - Predecessor: 66
+    Successor: B-F
+  - Predecessor: 86
+    Successor: V[+X]
+  Angle: 28
   Length: 1
   Thickness: 0.1
   LengthVariationFactor: 0.5
@@ -29,5 +33,5 @@ MonoBehaviour:
   LeafScaleMax: 1.2
   LeafOffset: 0.05
   LeafPlacementProbability: 1
-  DefaultIterations: 3
+  DefaultIterations: 5
   IsStochastic: 0

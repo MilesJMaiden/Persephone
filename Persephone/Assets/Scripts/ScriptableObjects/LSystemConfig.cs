@@ -33,6 +33,10 @@ namespace ProceduralGraphics.LSystems.ScriptableObjects
         public float LeafOffset = 0.05f;
         [Range(0f, 1f)]
         public float LeafPlacementProbability = 1.0f;
+
+        [Range(0.1f, 2.0f)]
+        public float LeafDensity = 1.0f;  // New field to control density
+
         public int DefaultIterations;
         public bool IsStochastic;
 
@@ -47,6 +51,7 @@ namespace ProceduralGraphics.LSystems.ScriptableObjects
             LeafScaleMax = 1.2f;
             LeafOffset = 0.05f;
             LeafPlacementProbability = 1.0f;
+            LeafDensity = 1.0f;
             DefaultIterations = 5;
             IsStochastic = false;
         }
