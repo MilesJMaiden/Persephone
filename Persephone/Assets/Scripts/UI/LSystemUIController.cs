@@ -50,7 +50,28 @@ namespace ProceduralGraphics.LSystems.UI
         [SerializeField]
         private TMP_Dropdown leafVariantDropdown;
 
-        // New UI controls for custom parameters
+        [SerializeField]
+        private Toggle windToggle;
+
+        [Header("Wind Settings UI")]
+        [SerializeField]
+        private Slider windStrengthSlider;
+
+        [SerializeField]
+        private Slider windFrequencySlider;
+
+        [SerializeField]
+        private Slider gustinessSlider;
+
+        [SerializeField]
+        private TMP_InputField windDirectionX;
+
+        [SerializeField]
+        private TMP_InputField windDirectionY;
+
+        [SerializeField]
+        private TMP_InputField windDirectionZ;
+
         [SerializeField]
         private TMP_InputField lengthVariationInput;
 
@@ -98,8 +119,22 @@ namespace ProceduralGraphics.LSystems.UI
             curvatureAngleInput.onEndEdit.AddListener(OnCurvatureAngleChanged);
             leafPlacementProbabilityInput.onEndEdit.AddListener(OnLeafPlacementProbabilityChanged);
 
-            // Disable the rotation slider initially
+            windToggle.onValueChanged.AddListener(OnWindToggleChanged);
+
+            windStrengthSlider.onValueChanged.AddListener(OnWindStrengthChanged);
+            windFrequencySlider.onValueChanged.AddListener(OnWindFrequencyChanged);
+            gustinessSlider.onValueChanged.AddListener(OnGustinessChanged);
+            windDirectionX.onEndEdit.AddListener(OnWindDirectionChanged);
+            windDirectionY.onEndEdit.AddListener(OnWindDirectionChanged);
+            windDirectionZ.onEndEdit.AddListener(OnWindDirectionChanged);
+
             rotationSlider.interactable = false;
+        }
+
+        public void RegeneratePlant()
+        {
+            Debug.Log("Regenerating plant.");
+            OnGenerateButtonClicked();
         }
 
         private void InitializeDropdown()
@@ -148,10 +183,7 @@ namespace ProceduralGraphics.LSystems.UI
 
         private IEnumerator EnableRotationSliderAfterGeneration(LSystemRenderer renderer)
         {
-            // Wait until the renderer is done with its coroutine
             yield return new WaitUntil(() => renderer.IsRenderingComplete);
-
-            // Enable the rotation slider
             rotationSlider.interactable = true;
         }
 
@@ -181,7 +213,6 @@ namespace ProceduralGraphics.LSystems.UI
 
         private void HandleUseMeshToggleChanged(bool isMeshOn)
         {
-            Debug.Log($"Use Mesh Renderer Toggle Changed: {isMeshOn}");
             OnUseMeshToggleChanged?.Invoke(isMeshOn);
         }
 
@@ -211,16 +242,15 @@ namespace ProceduralGraphics.LSystems.UI
         private void OnRotationSliderChanged(float value)
         {
             var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
-            if (lSystemRenderer != null && lSystemRenderer.IsRenderingComplete) // Check rendering status
+            if (lSystemRenderer != null && lSystemRenderer.IsRenderingComplete)
             {
                 lSystemRenderer.RotateRenderer(value);
             }
             else
             {
-                rotationSlider.value = 0; // Reset slider if rendering is not complete
+                rotationSlider.value = 0;
             }
         }
-
 
         private void OnLeafVariantDropdownChanged(int index)
         {
@@ -310,9 +340,9 @@ namespace ProceduralGraphics.LSystems.UI
 
         private void OnGenerateButtonClicked()
         {
-            // Disable the generate button and rotation slider at the start of generation
             generateButton.interactable = false;
             rotationSlider.interactable = false;
+            windToggle.isOn = false;
 
             int selectedIndex = variantDropdown.value;
 
@@ -320,57 +350,24 @@ namespace ProceduralGraphics.LSystems.UI
             {
                 LSystemConfig config = lSystemConfigs[selectedIndex];
 
-                // Validate and parse angle input
                 if (!float.TryParse(angleInput.text, out float parsedAngle))
                 {
-                    Debug.LogWarning("Invalid angle input. Using default value of 25.");
                     parsedAngle = 25f;
                     angleInput.text = parsedAngle.ToString();
                 }
 
-                // Validate and parse length input
                 if (!float.TryParse(lengthInput.text, out float parsedLength))
                 {
-                    Debug.LogWarning("Invalid length input. Using default value of 1.");
                     parsedLength = 1f;
                     lengthInput.text = parsedLength.ToString();
                 }
 
-                // Set the parsed values to the config
                 config.DefaultIterations = Mathf.RoundToInt(iterationSlider.value);
                 config.Angle = parsedAngle;
                 config.Length = parsedLength;
 
-                // Set values for the custom parameters
-                if (!float.TryParse(lengthVariationInput.text, out float lengthVariation))
-                {
-                    lengthVariation = 0.2f; // Default value
-                }
-                config.LengthVariationFactor = lengthVariation;
-
-                if (!float.TryParse(thicknessVariationInput.text, out float thicknessVariation))
-                {
-                    thicknessVariation = 0.3f; // Default value
-                }
-                config.ThicknessVariationFactor = thicknessVariation;
-
-                if (!float.TryParse(curvatureAngleInput.text, out float curvatureAngle))
-                {
-                    curvatureAngle = 10f; // Default value
-                }
-                config.CurvatureAngle = curvatureAngle;
-
-                if (!float.TryParse(leafPlacementProbabilityInput.text, out float leafProbability))
-                {
-                    leafProbability = 1f; // Default value
-                }
-                config.LeafPlacementProbability = Mathf.Clamp01(leafProbability);
-
-                rotationSlider.value = 0;
-
                 OnGenerateRequested?.Invoke(config);
 
-                // Find the renderer and subscribe to OnRenderComplete to re-enable UI
                 var renderer = FindObjectOfType<LSystemRenderer>();
                 if (renderer != null)
                 {
@@ -378,20 +375,13 @@ namespace ProceduralGraphics.LSystems.UI
                     renderer.Render(config);
                 }
             }
-            else
-            {
-                Debug.LogError("LSystemUIController: Selected config index is out of range.");
-            }
         }
 
-        // Method to re-enable both the generate button and rotation slider after rendering completes
         private void EnableUIAfterGeneration()
         {
             generateButton.interactable = true;
             rotationSlider.interactable = true;
-            Debug.Log("UI elements re-enabled after L-System generation.");
 
-            // Unsubscribe from the OnRenderComplete event to prevent multiple calls
             var renderer = FindObjectOfType<LSystemRenderer>();
             if (renderer != null)
             {
@@ -399,33 +389,54 @@ namespace ProceduralGraphics.LSystems.UI
             }
         }
 
-
-        // Method to re-enable the generate button when rendering is complete
-        private void EnableGenerateButton()
+        private void OnWindToggleChanged(bool isOn)
         {
-            generateButton.interactable = true; // Re-enable the button after rendering completes
-            var renderer = FindObjectOfType<LSystemRenderer>();
-            if (renderer != null)
+            var windManager = FindObjectOfType<WindManager>();
+            if (windManager != null)
             {
-                renderer.OnRenderComplete -= EnableGenerateButton; // Unsubscribe to avoid multiple triggers
+                windManager.ToggleWind(isOn);
             }
         }
 
-
-        private void EnableRotationSlider()
+        private void OnWindStrengthChanged(float value)
         {
-            rotationSlider.interactable = true; // Enable the slider after rendering completes
-            var renderer = FindObjectOfType<LSystemRenderer>();
-            if (renderer != null)
+            var windManager = FindObjectOfType<WindManager>();
+            if (windManager != null)
             {
-                renderer.OnRenderComplete -= EnableRotationSlider; // Unsubscribe to avoid multiple triggers
+                windManager.WindStrength = value;
             }
         }
 
-
-        public void RegeneratePlant()
+        private void OnWindFrequencyChanged(float value)
         {
-            OnGenerateButtonClicked();
+            var windManager = FindObjectOfType<WindManager>();
+            if (windManager != null)
+            {
+                windManager.WindFrequency = value;
+            }
+        }
+
+        private void OnGustinessChanged(float value)
+        {
+            var windManager = FindObjectOfType<WindManager>();
+            if (windManager != null)
+            {
+                windManager.Gustiness = value;
+            }
+        }
+
+        private void OnWindDirectionChanged(string value)
+        {
+            if (float.TryParse(windDirectionX.text, out float x) &&
+                float.TryParse(windDirectionY.text, out float y) &&
+                float.TryParse(windDirectionZ.text, out float z))
+            {
+                var windManager = FindObjectOfType<WindManager>();
+                if (windManager != null)
+                {
+                    windManager.WindDirection = new Vector3(x, y, z).normalized;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -439,13 +450,19 @@ namespace ProceduralGraphics.LSystems.UI
             allNodesToggle.onValueChanged.RemoveListener(OnAllNodesToggleChanged);
             stochasticToggle.onValueChanged.RemoveListener(OnStochasticToggleChanged);
             leafVariantDropdown.onValueChanged.RemoveListener(OnLeafVariantDropdownChanged);
-
             rotationSlider.onValueChanged.RemoveListener(OnRotationSliderChanged);
-
             lengthVariationInput.onEndEdit.RemoveListener(OnLengthVariationChanged);
             thicknessVariationInput.onEndEdit.RemoveListener(OnThicknessVariationChanged);
             curvatureAngleInput.onEndEdit.RemoveListener(OnCurvatureAngleChanged);
             leafPlacementProbabilityInput.onEndEdit.RemoveListener(OnLeafPlacementProbabilityChanged);
+
+            windToggle.onValueChanged.RemoveListener(OnWindToggleChanged);
+            windStrengthSlider.onValueChanged.RemoveListener(OnWindStrengthChanged);
+            windFrequencySlider.onValueChanged.RemoveListener(OnWindFrequencyChanged);
+            gustinessSlider.onValueChanged.RemoveListener(OnGustinessChanged);
+            windDirectionX.onEndEdit.RemoveListener(OnWindDirectionChanged);
+            windDirectionY.onEndEdit.RemoveListener(OnWindDirectionChanged);
+            windDirectionZ.onEndEdit.RemoveListener(OnWindDirectionChanged);
         }
     }
 }

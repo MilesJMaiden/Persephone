@@ -1,16 +1,18 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class Branch
 {
     public GameObject LineRendererObject { get; private set; }
     public Branch Parent { get; private set; }
     private List<Branch> children;
+    public float Length { get; private set; } // Branch length
 
-    public Branch(GameObject lineRendererObject, Branch parent)
+    public Branch(GameObject lineRendererObject, Branch parent, float length)
     {
         LineRendererObject = lineRendererObject;
         children = new List<Branch>();
+        Length = length;
 
         if (parent != null && parent.LineRendererObject != null)
         {

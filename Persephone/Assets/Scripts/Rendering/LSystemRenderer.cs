@@ -40,11 +40,14 @@ namespace ProceduralGraphics.LSystems.Rendering
 
         private List<GameObject> flowers = new List<GameObject>();
 
+        private WindManager windManager;
+
         public bool IsRenderingComplete { get; private set; }
 
         private void Start()
         {
             uiController = FindObjectOfType<LSystemUIController>();
+            windManager = FindObjectOfType<WindManager>();
 
             if (uiController != null)
             {
@@ -112,7 +115,6 @@ namespace ProceduralGraphics.LSystems.Rendering
 
             foreach (char command in config.Axiom)
             {
-                // Process each command in the L-System axiom
                 switch (command)
                 {
                     case 'F':
@@ -150,7 +152,8 @@ namespace ProceduralGraphics.LSystems.Rendering
                                 nodeBehaviour.Initialize(currentBranch);
                             }
 
-                            Branch newBranch = new Branch(currentLineRendererObject, null);
+                            float branchLength = Vector3.Distance(positions[0], positions[1]); // Calculate branch length
+                            Branch newBranch = new Branch(currentLineRendererObject, null, branchLength);
                             if (currentBranch != null && currentBranch.LineRendererObject != null)
                             {
                                 LineRenderer previousLineRenderer = currentBranch.LineRendererObject.GetComponent<LineRenderer>();
@@ -169,6 +172,19 @@ namespace ProceduralGraphics.LSystems.Rendering
 
                             branchCount++;
                             if (branchCount % 10 == 0) FocusCameraOnPlant();
+
+                            // Register branch to WindManager
+                            if (windManager != null)
+                            {
+                                windManager.RegisterBranch(newBranch);
+                            }
+                        }
+                        break;
+
+                    case 'W': // Apply wind effect
+                        if (currentBranch != null && windManager != null)
+                        {
+                            windManager.RegisterBranch(currentBranch);
                         }
                         break;
 
@@ -180,7 +196,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                         CreateLeaf(currentPosition, currentLineRendererObject, config);
                         break;
 
-                    case 'X': // New case for flower spawning
+                    case 'X':
                         CreateFlower(currentPosition, currentLineRendererObject);
                         break;
 
@@ -189,16 +205,22 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
 
                     case 'B':
-                        float curvatureAngle = UnityEngine.Random.Range(config.CurvatureAngleMin, config.CurvatureAngleMax);
+                        float curvatureAngle = isStochastic
+                            ? Random.Range(config.CurvatureAngleMin, config.CurvatureAngleMax)
+                            : config.CurvatureAngleMin; // Fixed curvature for deterministic mode
                         currentRotation *= Quaternion.Euler(0, 0, curvatureAngle);
                         break;
 
                     case '+':
-                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(config.Angle) : Deterministic3DAngle(config.Angle));
+                        currentRotation *= Quaternion.Euler(isStochastic
+                            ? Stochastic3DAngle(config.Angle)
+                            : new Vector3(0, 0, config.Angle));
                         break;
 
                     case '-':
-                        currentRotation *= Quaternion.Euler(isStochastic ? Stochastic3DAngle(-config.Angle) : Deterministic3DAngle(-config.Angle));
+                        currentRotation *= Quaternion.Euler(isStochastic
+                            ? Stochastic3DAngle(-config.Angle)
+                            : new Vector3(0, 0, -config.Angle));
                         break;
 
                     case '[':
@@ -238,9 +260,6 @@ namespace ProceduralGraphics.LSystems.Rendering
             // Reset the generation flag to allow new generations
             isGenerating = false;  // Reset the flag here to allow for future calls
         }
-
-
-
         private GameObject GetOrCreateLineRenderer()
         {
             // Check the pool first for available branches
