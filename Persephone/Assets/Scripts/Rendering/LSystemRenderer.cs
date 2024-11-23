@@ -19,7 +19,10 @@ namespace ProceduralGraphics.LSystems.Rendering
         private GameObject nodePrefab;
 
         [SerializeField]
-        public GameObject[] leafVariants; // Array to hold leaf variants
+        public GameObject[] leafVariants;
+
+        [SerializeField]
+        public GameObject[] flowerVariants;
 
         [SerializeField]
         private Transform lineRenderParent;
@@ -197,7 +200,7 @@ namespace ProceduralGraphics.LSystems.Rendering
                         break;
 
                     case 'X':
-                        CreateFlower(currentPosition, currentLineRendererObject);
+                        CreateFlower(currentPosition, currentLineRendererObject, config);
                         break;
 
                     case 'T':
@@ -299,29 +302,70 @@ namespace ProceduralGraphics.LSystems.Rendering
                         Random.Range(-config.LeafOffset, config.LeafOffset)
                     );
 
+                    // Set material color
+                    if (config.LeafMaterial != null && leafInstance.TryGetComponent(out Renderer renderer))
+                    {
+                        renderer.material = config.LeafMaterial;
+                        renderer.material.color = config.LeafColor; // Set the base color
+                    }
+
                     leaves.Add(leafInstance);
                 }
             }
         }
 
-
-        private void CreateFlower(Vector3 currentPosition, GameObject currentLineRendererObject)
+        private void CreateFlower(Vector3 currentPosition, GameObject currentLineRendererObject, LSystemConfig config)
         {
-            if (currentLineRendererObject != null) // Ensure the current branch exists
+            if (currentLineRendererObject != null && config != null) // Ensure branch and config exist
             {
-                GameObject flowerInstance = Instantiate(flowerPrefab, currentLineRendererObject.transform);
+                // Ensure valid flower variant index
+                int variantIndex = Mathf.Clamp(config.SelectedFlowerVariantIndex, 0, flowerVariants.Length - 1);
+                GameObject selectedFlowerVariant = flowerVariants[variantIndex];
+
+                if (selectedFlowerVariant == null)
+                {
+                    Debug.LogWarning($"Flower variant at index {variantIndex} is null. Skipping flower creation.");
+                    return;
+                }
+
+                // Instantiate flower
+                GameObject flowerInstance = Instantiate(selectedFlowerVariant, currentLineRendererObject.transform);
                 flowerInstance.transform.localPosition = currentLineRendererObject.transform.InverseTransformPoint(currentPosition);
 
-                // Optionally adjust flower rotation and scale
+                // Randomize rotation
                 flowerInstance.transform.localRotation = Quaternion.Euler(
                     Random.Range(0f, 360f),
                     Random.Range(0f, 360f),
                     Random.Range(0f, 360f)
                 );
 
+                // Apply random scaling
+                float randomScaleFactor = Random.Range(config.FlowerScaleMin, config.FlowerScaleMax);
+                flowerInstance.transform.localScale = new Vector3(randomScaleFactor, randomScaleFactor, randomScaleFactor);
+
+                // Apply offset for more natural placement
+                flowerInstance.transform.localPosition += new Vector3(
+                    Random.Range(-config.FlowerOffset, config.FlowerOffset),
+                    Random.Range(-config.FlowerOffset, config.FlowerOffset),
+                    Random.Range(-config.FlowerOffset, config.FlowerOffset)
+                );
+
+                // Set material and color
+                if (config.FlowerMaterial != null && flowerInstance.TryGetComponent(out Renderer renderer))
+                {
+                    renderer.material = config.FlowerMaterial; // Set the material
+                    renderer.material.color = config.FlowerColor; // Set the base color
+                }
+                else
+                {
+                    Debug.LogWarning("No valid FlowerMaterial found or Renderer component missing on flower instance.");
+                }
+
                 flowers.Add(flowerInstance); // Track instantiated flowers
             }
         }
+
+
 
 
         public void ClearAllObjects()
@@ -492,5 +536,30 @@ namespace ProceduralGraphics.LSystems.Rendering
                 }
             }
         }
+
+        public void SetLeavesActive(bool isActive)
+        {
+            foreach (var leaf in leaves)
+            {
+                if (leaf != null)
+                {
+                    leaf.SetActive(isActive);
+                }
+            }
+            Debug.Log($"All leaves set to active: {isActive}");
+        }
+
+        public void SetFlowersActive(bool isActive)
+        {
+            foreach (var flower in flowers)
+            {
+                if (flower != null)
+                {
+                    flower.SetActive(isActive);
+                }
+            }
+            Debug.Log($"All flowers set to active: {isActive}");
+        }
+
     }
 }

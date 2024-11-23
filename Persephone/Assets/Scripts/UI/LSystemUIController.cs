@@ -13,6 +13,10 @@ namespace ProceduralGraphics.LSystems.UI
 {
     public class LSystemUIController : MonoBehaviour
     {
+        [Header("Rules Display")]
+        [SerializeField]
+        private TMP_Text rulesDisplayText;
+
         [Header("UI Elements")]
         [SerializeField]
         private TMP_Dropdown variantDropdown;
@@ -51,6 +55,9 @@ namespace ProceduralGraphics.LSystems.UI
         private TMP_Dropdown leafVariantDropdown;
 
         [SerializeField]
+        private TMP_Dropdown flowerVariantDropdown;
+
+        [SerializeField]
         private Toggle windToggle;
 
         [Header("Wind Settings UI")]
@@ -84,6 +91,29 @@ namespace ProceduralGraphics.LSystems.UI
         [SerializeField]
         private TMP_InputField leafPlacementProbabilityInput;
 
+        [Header("Leaf Settings UI")]
+        [SerializeField]
+        private Toggle leavesToggle;
+
+        [SerializeField] private TMP_InputField leafScaleMinInput;
+        [SerializeField] private TMP_InputField leafScaleMaxInput;
+        //[SerializeField] private TMP_InputField leafPlacementProbabilityInput;
+        [SerializeField] private TMP_InputField leafDensityInput;
+
+        [Header("Leaf Color Settings")]
+        [SerializeField] private TMP_InputField leafColorInput;
+
+        [Header("Flower Settings UI")]
+        [SerializeField]
+        private Toggle flowersToggle;
+        [SerializeField] private TMP_InputField flowerScaleMinInput;
+        [SerializeField] private TMP_InputField flowerScaleMaxInput;
+        [SerializeField] private TMP_InputField flowerPlacementProbabilityInput;
+        [SerializeField] private TMP_InputField flowerOffsetInput;
+
+        [Header("Flower Color Settings")]
+        [SerializeField] private TMP_InputField flowerColorInput;
+
         [Header("L-System Configurations")]
         [SerializeField]
         private LSystemConfig[] lSystemConfigs;
@@ -100,6 +130,7 @@ namespace ProceduralGraphics.LSystems.UI
         {
             InitializeDropdown();
             InitializeLeafVariantDropdown();
+            InitializeFlowerVariantDropdown();
             InitializeRotationSlider();
 
             iterationSlider.onValueChanged.AddListener(OnIterationSliderChanged);
@@ -117,7 +148,6 @@ namespace ProceduralGraphics.LSystems.UI
             lengthVariationInput.onEndEdit.AddListener(OnLengthVariationChanged);
             thicknessVariationInput.onEndEdit.AddListener(OnThicknessVariationChanged);
             curvatureAngleInput.onEndEdit.AddListener(OnCurvatureAngleChanged);
-            leafPlacementProbabilityInput.onEndEdit.AddListener(OnLeafPlacementProbabilityChanged);
 
             windToggle.onValueChanged.AddListener(OnWindToggleChanged);
 
@@ -128,7 +158,79 @@ namespace ProceduralGraphics.LSystems.UI
             windDirectionY.onEndEdit.AddListener(OnWindDirectionChanged);
             windDirectionZ.onEndEdit.AddListener(OnWindDirectionChanged);
 
+            leafScaleMinInput.onEndEdit.AddListener(OnLeafScaleMinChanged);
+            leafScaleMaxInput.onEndEdit.AddListener(OnLeafScaleMaxChanged);
+            leafPlacementProbabilityInput.onEndEdit.AddListener(OnLeafPlacementProbabilityChanged);
+            leafDensityInput.onEndEdit.AddListener(OnLeafDensityChanged);
+            leafColorInput.onEndEdit.AddListener(OnLeafColorCodeChanged);
+
+            flowerScaleMinInput.onEndEdit.AddListener(OnFlowerScaleMinChanged);
+            flowerScaleMaxInput.onEndEdit.AddListener(OnFlowerScaleMaxChanged);
+            flowerPlacementProbabilityInput.onEndEdit.AddListener(OnFlowerPlacementProbabilityChanged);
+            flowerOffsetInput.onEndEdit.AddListener(OnFlowerOffsetChanged);
+            flowerColorInput.onEndEdit.AddListener(OnFlowerColorCodeChanged);
+
+            leavesToggle.onValueChanged.AddListener(OnLeavesToggleChanged);
+            flowersToggle.onValueChanged.AddListener(OnFlowersToggleChanged);
+
             rotationSlider.interactable = false;
+
+            // Ensure the initial UI matches the first selected configuration
+            if (variantDropdown.options.Count > 0 && variantDropdown.value >= 0)
+            {
+                UpdateUIWithConfig(lSystemConfigs[variantDropdown.value]);
+                DisplayRules(lSystemConfigs[variantDropdown.value]);
+            }
+        }
+
+        private void DisplayRules(LSystemConfig config)
+        {
+            if (config == null || rulesDisplayText == null) return;
+
+            string rulesText = $"Axiom: {config.Axiom}\n\nRules:\n";
+
+            foreach (var rule in config.Rules)
+            {
+                rulesText += $"Predecessor: {rule.Predecessor}\nSuccessor: {rule.Successor}\n\n";
+            }
+
+            rulesDisplayText.text = rulesText;
+        }
+
+        private void InitializeFlowerVariantDropdown()
+        {
+            flowerVariantDropdown.ClearOptions();
+
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null && lSystemRenderer.flowerVariants.Length > 0)
+            {
+                var flowerOptions = new List<string>();
+                foreach (var flowerVariant in lSystemRenderer.flowerVariants)
+                {
+                    if (flowerVariant != null)
+                    {
+                        flowerOptions.Add(flowerVariant.name);
+                    }
+                }
+                flowerVariantDropdown.AddOptions(flowerOptions);
+                flowerVariantDropdown.value = lSystemConfigs[variantDropdown.value].SelectedFlowerVariantIndex; // Set initial value
+                flowerVariantDropdown.onValueChanged.AddListener(OnFlowerVariantDropdownChanged);
+            }
+            else
+            {
+                Debug.LogWarning("LSystemRenderer or flowerVariants not set correctly.");
+            }
+        }
+
+        private void OnFlowerVariantDropdownChanged(int index)
+        {
+            var config = GetSelectedConfig();
+            if (config != null)
+            {
+                config.SelectedFlowerVariantIndex = index; // Update the selected index in the config
+            }
+
+            Debug.Log($"Flower Variant Selected: {index}");
         }
 
         public void RegeneratePlant()
@@ -147,6 +249,26 @@ namespace ProceduralGraphics.LSystems.UI
             }
             variantDropdown.AddOptions(options);
             variantDropdown.onValueChanged.AddListener(OnVariantDropdownChanged);
+        }
+
+        private void OnLeavesToggleChanged(bool isOn)
+        {
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
+            {
+                lSystemRenderer.SetLeavesActive(isOn);
+            }
+            Debug.Log($"Leaves visibility toggled: {(isOn ? "On" : "Off")}");
+        }
+
+        private void OnFlowersToggleChanged(bool isOn)
+        {
+            var lSystemRenderer = FindObjectOfType<LSystemRenderer>();
+            if (lSystemRenderer != null)
+            {
+                lSystemRenderer.SetFlowersActive(isOn);
+            }
+            Debug.Log($"Flowers visibility toggled: {(isOn ? "On" : "Off")}");
         }
 
         private void InitializeLeafVariantDropdown()
@@ -269,6 +391,7 @@ namespace ProceduralGraphics.LSystems.UI
             {
                 variantDropdown.Hide();
                 UpdateUIWithConfig(lSystemConfigs[index]);
+                DisplayRules(lSystemConfigs[index]);
             }
 
             if (inputModule != null)
@@ -295,8 +418,26 @@ namespace ProceduralGraphics.LSystems.UI
             lengthVariationInput.text = config.LengthVariationFactor.ToString();
             thicknessVariationInput.text = config.ThicknessVariationFactor.ToString();
             curvatureAngleInput.text = config.CurvatureAngle.ToString();
+
+
+            // Update UI elements with values from the config
+            leafScaleMinInput.text = config.LeafScaleMin.ToString();
+            leafScaleMaxInput.text = config.LeafScaleMax.ToString();
             leafPlacementProbabilityInput.text = config.LeafPlacementProbability.ToString();
+            leafDensityInput.text = config.LeafDensity.ToString();
+
+            flowerScaleMinInput.text = config.FlowerScaleMin.ToString();
+            flowerScaleMaxInput.text = config.FlowerScaleMax.ToString();
+            flowerPlacementProbabilityInput.text = config.FlowerPlacementProbability.ToString();
+            flowerOffsetInput.text = config.FlowerOffset.ToString();
+
+            if (flowerVariantDropdown != null)
+            {
+                flowerVariantDropdown.value = config.SelectedFlowerVariantIndex;
+            }
+
         }
+
 
         private void OnLengthVariationChanged(string value)
         {
@@ -328,14 +469,111 @@ namespace ProceduralGraphics.LSystems.UI
             lSystemConfigs[variantDropdown.value].CurvatureAngle = angle;
         }
 
+        private void OnLeafScaleMinChanged(string value)
+        {
+            if (float.TryParse(value, out float parsedValue))
+            {
+                lSystemConfigs[variantDropdown.value].LeafScaleMin = parsedValue;
+            }
+        }
+        private void OnLeafScaleMaxChanged(string value)
+        {
+            UpdateSelectedConfig(value, (config, v) => config.LeafScaleMax = Mathf.Max(v, config.LeafScaleMin));
+        }
         private void OnLeafPlacementProbabilityChanged(string value)
         {
-            if (!float.TryParse(value, out float probability))
+            UpdateSelectedConfig(value, (config, v) => config.LeafPlacementProbability = Mathf.Clamp01(v));
+        }
+        private void OnLeafDensityChanged(string value)
+        {
+            UpdateSelectedConfig(value, (config, v) => config.LeafDensity = Mathf.Clamp(v, 0.1f, 2.0f));
+        }
+
+        private void OnLeafColorChanged(Color color)
+        {
+            lSystemConfigs[variantDropdown.value].LeafColor = color;
+        }
+
+        private void OnFlowerScaleMinChanged(string value)
+        {
+            UpdateSelectedConfig(value, (config, v) => config.FlowerScaleMin = Mathf.Min(v, config.FlowerScaleMax));
+        }
+
+        private void OnFlowerScaleMaxChanged(string value)
+        {
+            UpdateSelectedConfig(value, (config, v) => config.FlowerScaleMax = Mathf.Max(v, config.FlowerScaleMin));
+        }
+        private void OnFlowerPlacementProbabilityChanged(string value)
+        {
+            if (float.TryParse(value, out float probability))
             {
-                Debug.LogWarning("Invalid leaf placement probability input.");
+                lSystemConfigs[variantDropdown.value].FlowerPlacementProbability = Mathf.Clamp01(probability);
+            }
+        }
+        private void OnFlowerOffsetChanged(string value)
+        {
+            UpdateSelectedConfig(value, (config, v) => config.FlowerOffset = Mathf.Clamp(v, 0f, 0.1f));
+        }
+        private void OnFlowerColorChanged(Color color)
+        {
+            var config = GetSelectedConfig();
+            if (config != null)
+            {
+                config.FlowerColor = color;
+            }
+        }
+
+        private void OnLeafColorCodeChanged(string colorCode)
+        {
+            if (ColorUtility.TryParseHtmlString(colorCode, out Color parsedColor))
+            {
+                lSystemConfigs[variantDropdown.value].LeafColor = parsedColor;
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid leaf color code: {colorCode}");
+            }
+        }
+
+        private void OnFlowerColorCodeChanged(string colorCode)
+        {
+            if (ColorUtility.TryParseHtmlString(colorCode, out Color parsedColor))
+            {
+                lSystemConfigs[variantDropdown.value].FlowerColor = parsedColor;
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid flower color code: {colorCode}");
+            }
+        }
+
+        private void UpdateSelectedConfig(string value, Action<LSystemConfig, float> updateAction)
+        {
+            var config = GetSelectedConfig();
+            if (config == null)
+            {
+                Debug.LogWarning("No L-System configuration is selected.");
                 return;
             }
-            lSystemConfigs[variantDropdown.value].LeafPlacementProbability = Mathf.Clamp01(probability);
+
+            if (!float.TryParse(value, out float parsedValue))
+            {
+                Debug.LogWarning($"Invalid input: {value}. Skipping update.");
+                return;
+            }
+
+            updateAction.Invoke(config, parsedValue);
+        }
+
+        private LSystemConfig GetSelectedConfig()
+        {
+            if (lSystemConfigs != null && variantDropdown.value >= 0 && variantDropdown.value < lSystemConfigs.Length)
+            {
+                return lSystemConfigs[variantDropdown.value];
+            }
+
+            Debug.LogWarning("Invalid or no L-System configuration selected.");
+            return null;
         }
 
         private void OnGenerateButtonClicked()
