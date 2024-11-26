@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64a0d3796f43bb84e8c3f24a70dc31de, type: 3}
+  m_Name: AssignmentConfigE
+  m_EditorClassIdentifier: 
+  Name: Assignment Config E
+  Axiom: V
+  Rules:
+  - Predecessor: 86
+    Successor: F[+V][-V]FV
+  - Predecessor: 70
+    Successor: FF
+  Angle: 25.7
+  Length: 0.4
+  Thickness: 0.1
+  LengthVariationFactor: 0.5
+  ThicknessVariationFactor: 0.5
+  CurvatureAngleMin: 0
+  CurvatureAngleMax: 5
+  CurvatureAngle: 10
+  LeafScaleMin: 0.5
+  LeafScaleMax: 0.6
+  LeafOffset: 0.02
+  LeafPlacementProbability: 1
+  LeafDensity: 1
+  LeafColor: {r: 0, g: 1, b: 0, a: 1}
+  LeafMaterial: {fileID: 2100000, guid: 5b1818cb3a918534284bd920c21b7595, type: 2}
+  FlowerScaleMin: 2
+  FlowerScaleMax: 3.5
+  FlowerPlacementProbability: 0.5
+  FlowerOffset: 0.02
+  FlowerColor: {r: 1, g: 0, b: 0, a: 1}
+  FlowerMaterial: {fileID: 2100000, guid: d6ec5df6a858906499363f3293d3eddb, type: 2}
+  SelectedFlowerVariantIndex: 0
+  DefaultIterations: 4
+  IsStochastic: 0
